@@ -1,0 +1,78 @@
+.func FindCoins_func
+FindCoins_func:
+    // Load stage entity pointer
+    .local    =list
+	// Which level are we looking at?
+	lda  $=LevelCode
+	// Index the LUT
+	asl a
+	tax
+	lda    $0xfe0000,x
+    sta    $.list
+	// Get the top 8 bits
+	xba
+	and #0x00ff
+	ora #0xfe00
+    sta    $.list+1
+
+    // Initialize other variables
+    .local    _bit, _coinIndex, _currentIndex
+    lda    #1
+    sta    $.bit
+    stz    $.coinIndex
+	stz	   $.currentIndex
+
+b_loop:
+        // Is entity of type 0?
+        lda    [$.list]
+        beq    $+b_loop_end
+
+        // Is this entity a coin?
+        ldy    #6
+        lda    [$.list],y
+
+		UniqueItemMac        0x0836
+		UniqueItemMac        0x0b92
+		UniqueItemMac        0x0838
+
+        bne    $+b_ItemNotFound
+	b_ItemFound:
+            // Add new coin
+            ldx    $.coinIndex
+            lda    $.currentIndex
+            sta    $=CoinIndexes,x
+
+            // TODO: Test if coin was picked up, use "bit" for testing
+            // If coin was picked up, set the bit that prevents it from appearing
+			// Load our byte of flags
+			lda $=LevelCode
+			asl a
+			tax
+			lda $=CollectedFlag,x
+			and $.bit
+			beq $+b_1_skip_set
+				// Load index
+				lda $.currentIndex
+				// Double
+				asl a
+				tax
+				lda #0x0e9e
+				sta $=CollectedArray,x
+				
+		b_1_skip_set:
+
+            // Increment coin count
+            inc    $.coinIndex
+            inc    $.coinIndex
+            asl    $.bit
+b_ItemNotFound:
+        // Next
+        lda    #8
+        clc
+        adc    $.list
+        sta    $.list
+		inc    $.currentIndex
+        bra    $-b_loop
+
+b_loop_end:
+    return

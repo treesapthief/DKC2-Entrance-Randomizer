@@ -1,0 +1,23 @@
+TransitionB5Music:
+	jmp $=CancelTrack
+	
+EnemySoundEffects:
+
+	tax
+
+	lda $=SoundEffects
+	cmp #0
+	bne $+EnemySoundEffects_skip_normal
+		//Get A back
+		txa
+		// Replaced
+		sep #0x30
+		xba
+		tax
+
+		jmp $0x808c
+EnemySoundEffects_skip_normal:
+
+	// Get A back
+	txa
+	rts

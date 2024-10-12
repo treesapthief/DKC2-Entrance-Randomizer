@@ -1,0 +1,30 @@
+KongNumberCheckFunc:
+sta $0x7ffff0
+	lda #0
+	sta $=HasParentFlag
+	
+	lda $=MiscFlags
+	and #0x4000
+	beq $+KongNumberCheckFunc_skip_two
+		rtl
+
+KongNumberCheckFunc_skip_two:
+	// Pull 24 bits off stack
+	php
+	pla
+	pla
+	
+	lda #1
+	sta $=HasParentFlag
+	sta $=DeathFlag
+	IncreaseDeathCounter
+	jmp $=BonusLose
+	
+FallDeath:
+sta $0x7ffff0
+	lda #1
+	sta $=HasParentFlag
+	sta $=DeathFlag
+	IncreaseDeathCounter
+
+	jmp $=BonusLose

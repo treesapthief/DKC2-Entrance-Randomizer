@@ -1,0 +1,484 @@
+StartGame:
+	lda $=Mode
+	sta $0x060d
+	jmp $=0x809983
+	
+	jmp $=MasterChangeLevelFunc
+	
+StartAdvanced:
+	// Replaced
+	stz $0x0513
+	lda #0x840f
+	sta $0x0512
+	
+	lda #0x810e
+	sta $0x0512
+	rtl
+
+
+	
+CheatToggledFunc:
+
+	lda $=CheatTimer
+	beq $+b_skip_set
+		dec a
+		sta $=CheatTimer
+b_skip_set:
+
+	// Generate seed every frame
+	jsr $=GetRandom
+	adc $=RNGSeed
+	sta $=RNGSeed
+	
+	lda $=TitleVisited
+	bne $+b_skip_intro
+		jmp $=CheatToggledfunc_return
+b_skip_intro:
+	
+	// Load so we can see what the player is pressing
+	lda $=ControllerInput
+	
+	bit #0x0300
+	beq $+b_skip_cheat
+		lda $=CheatTimer
+		bne $+b_skip_cheat
+			lda #90
+			sta $=CheatTimer
+			// Unused kong chirp
+			ldx #0x0003
+			// Main menu beep
+			ldx #0x0633
+			// Play sound effect
+			jsr $=PlaySoundEffect
+			
+			lda $=GameMode
+			bne $+b_skip_on
+				lda #1
+				sta $=GameMode
+				bra $+b_skip_cheat
+		b_skip_on:
+			lda #0
+			sta $=GameMode
+b_skip_cheat:
+	
+CheatToggledfunc_return:
+	lda $=ControllerInput
+	eor $0x502
+	and #0xf0ff
+	rtl
+	
+	
+// All registers must return valid values
+GameLoad:
+	pha
+	phx
+	phy
+	// Clear SRAM always
+	jsr $=ClearSasWRAM
+	// Clear our 'blank' VRAM
+	//jsr $=ClearStoVRAM
+	
+	jsr $=SetEXENumber
+
+	ply
+	plx
+	pla
+	jmp $0xb58000
+	
+// All registers used
+Logo:
+
+	// Call dma
+	jsr $0x80895f
+
+	php
+	pha
+	phx
+	phy
+
+	
+	// Clear the word 'nintendo'
+	lda #0x7400
+	sta $0x2116
+	
+	lda #_IntroTileMap
+	ldx #_IntroTileMap/0x10000
+	ldy #0x0380
+
+	jsr $=WriteWithDMA
+
+	// Load custom image
+	lda #0x4100
+	sta $0x2116
+	
+	lda #0x3900
+	ldx #0x00f7
+	ldy #0x1080
+	
+	jsr $=WriteWithDMA
+	
+	// Load custom image
+	lda #0x6800
+	sta $0x2116
+	
+	lda #0x4900
+	ldx #0x00f7
+	ldy #0x1000
+
+	//jsr $=WriteWithDMA
+	
+
+	FuncStart
+	jsr $=ArrangeLogoTileMap
+	FuncEnd
+	
+	// Write our tiles
+	lda #0x7400
+	sta $0x2116
+	
+	lda #_IntroTileMap
+	ldx #_IntroTileMap/0x10000
+	ldy #0x0380
+
+	jsr $=WriteWithDMA
+
+	.mx 0x20
+	sep #0x20
+	lda #0x0f
+	sta $0x0512
+	sta $0x2100
+	rep #0x20
+	.mx 0x00
+
+	
+	ply
+	plx
+	pla
+	plp
+	rtl
+	
+ArrangeLogoTileMap:
+	
+
+	EnableVRAM
+
+	//.macro WriteRow tile, window, times, x, y
+			WriteRow 0x0010, 0x0c00, 25, 3, 6
+			WriteRow 0x002a, 0x0c00, 25, 3, 7
+			WriteRow 0x0044, 0x0c00, 25, 3, 8
+			WriteRow 0x005e, 0x0c00, 25, 3, 9
+			WriteRow 0x0078, 0x0c00, 25, 3, 10
+
+			rtl
+
+CopyrightWrite:
+	// Replaced
+	jsr $0x80895f
+	
+	// Save just in case
+	php
+	pha
+	phx
+	phy
+
+	ClearIntroTileMap 0
+
+	// Load custom image
+	lda #0x2000
+	sta $0x2116
+	
+	lda #0x8468
+	ldx #0x00f7
+	ldy #0x2000
+
+	jsr $=WriteWithDMA
+
+	// Load custom image
+	lda #0x1000
+	sta $0x2116
+	
+	lda #0x9468
+	ldx #0x00f7
+	ldy #0x2000
+
+	jsr $=WriteWithDMA
+
+	FuncStart
+
+	jsr $=ArrangeCustomCopywrite
+	
+	FuncEnd
+	
+	// Put in
+	
+	lda #0x7c00
+	sta $0x2116
+	
+	lda #_IntroTileMap
+	ldx #_IntroTileMap/0x10000
+	ldy #0x0800
+
+	jsr $=WriteWithDMA
+			
+	// Retrieve
+	ply
+	plx
+	pla
+	plp
+	
+	rtl
+
+ArrangeCustomCopywrite:
+	
+	WriteCopyright 5, 7	
+
+	rtl
+
+TitleTilemapDMA:
+	// Replaced
+	jsr $0x80895f
+	
+	// Empty to reuse
+	ClearIntroTileMap 0	
+	
+	// Clear bg1 screen 0
+	WriteToVRAM 0x4000, IntroTileMap, 0x2000
+	
+	// Clear bg1 screen 1
+	WriteToVRAM 0x5000, IntroTileMap, 0x2000
+	
+	// Clear bg1 screen 2
+	WriteToVRAM 0x6000, IntroTileMap, 0x2000
+
+	// Clear bg1 tilemap
+	//WriteToVRAM 0x1c00, IntroTileMap, 0x0800
+
+	// Clear bg3 screen 0
+	WriteToVRAM 0x8000, IntroTileMap, 0x2000
+
+	// Clear bg3 screen 3
+	WriteToVRAM 0x3000, IntroTileMap, 0x2000
+
+	// Load top words
+	WriteToVRAM 0x4000, 0xf7af68, 0x2000
+	
+	// Load bottom words
+	WriteToVRAM 0x6000, 0xf7c6a8, 0x0800
+	
+	// Load background
+	WriteToVRAM 0x2000, 0xf7e7e8, 0x0020
+	
+	// Load diddy tiles
+	WriteToVRAM 0x5000, 0xf7ce48, 0x0800
+
+	// Load game mode sprite tiles
+	//WriteToVRAM 0x1400, 0xf7e808, 0x0300
+	
+	// Load diddy sprite tiles
+	WriteToVRAM 0x1a00, 0xd37542, 0x0300
+	
+	// Load dixie tiles
+	WriteToVRAM 0x5400, 0xf7d728, 0x0800
+
+	// Load dixie sprite tiles
+	WriteToVRAM 0x1800, 0xd35b5a, 0x0200
+	// Load dixie sprite tiles
+	WriteToVRAM 0x1900, 0xd35d1a, 0x0100
+	
+	// Load dk tiles
+	WriteToVRAM 0x5800, 0xf7dde8, 0x0a00
+	
+	// Load dk sprite tiles
+	WriteToVRAM 0x1200, 0xdd943a, 0x0200
+	// Load dk sprite tiles 2
+	WriteToVRAM 0x1300, 0xdd95da, 0x0200
+	
+	// Load rope knot sprite tiles
+	WriteToVRAM 0x1600, 0xddbdf0, 0x00c0
+	// Load rope knot sprite tiles row 2
+	WriteToVRAM 0x1700, 0xddbeb0, 0x0080
+	
+	// Load rope sprite tiles
+	WriteToVRAM 0x1000, 0xddc296, 0x0100
+		
+	// Write our tiles to bg1 tilemap
+	WriteToVRAM 0x4c00, IntroTileMap, 0x0800
+
+	// Write our alphabet in bg1
+	WriteToVRAM 0x7000, 0xf7e808, 0x0800
+
+	// Write our alphabet in sprites
+	WriteToVRAM 0x0000, 0xf7e808, 0x0800
+	
+	// Load first pal
+	PaletteDMA CustomIntroPalette, 0x001e, 0x01
+		
+	jsr $=ArrangeTitleTilemap
+
+	lda #1
+	sta $=TitleVisited
+
+	lda #0x1313
+	sta $0x212c
+
+	
+	rtl
+	
+ArrangeTitleTilemap:
+	
+	// Empty to reuse
+	ClearIntroTileMap 0	
+
+	FuncStart
+	WriteTitleTop 0, 1, 0x2400
+	WriteTitleBottom 9, 8, 0x2600
+	
+	WriteStringIntro 1, 25, LogicText
+	WriteStringIntro 1, 26, VersionText
+	WriteStringIntro 20, 25, BossesText
+	WriteStringIntro 20, 26, SeedText
+	
+	WriteStringIntro 13, 23, PlayerString
+	FuncEnd
+	
+	// Write our tiles to bg1 tilemap
+	WriteToVRAM 0x1c00, IntroTileMap, 0x0800
+		
+	rtl
+
+IntroPaletteLoad:
+	// Replaced
+	jsr $0xbb8089
+	
+	// Load first pal
+	PaletteDMA CustomIntroPalette, 0x1e, 0x01
+	
+	// Load first pal
+	PaletteDMA CustomIntroPalette, 0x1e, 0x11
+
+	PaletteDMA 0xfd6574, 0x001e, 0xa1
+	PaletteDMA 0xfd6484, 0x001e, 0x91
+
+	// Donkey rope
+	PaletteDMA 0xfd7000, 0x001e, 0xc1
+
+
+	// Donkey a8
+	//PaletteDMA 0xfd76d4, 0x001e, 0x01
+	PaletteDMA 0xfd76d4, 0x001e, 0xb1
+
+	PaletteDMA CustomIntroPalette, 0x001e, 0xf1
+		
+	jsr $=GetRandomBackground
+	
+	// Disable color math
+	//stz $0x2130
+	
+	rtl
+	
+LoadOAM:
+	lda $=FirstMusic
+	beq $+b_skip_title
+		// Pull jsr off stack
+		phb
+		pla
+		pla
+		
+		// Replaced
+		ldy #0
+		lda [$0x40],y
+		jmp $0xb5a219
+
+b_skip_title:
+	
+	php
+	
+	lda #0x0200
+	sta $0x70
+	
+	//.macro WriteSprite3_16_R x, y, tile, attr, image,
+
+	WriteSprite3_16_R 0xffb0, 0x4f, 0xa0, 0x33, DiddyScream
+	WriteSpriteDixie_3_16_L 0x0030, 0x4f, 0x80, 0x65, DixieScream
+	WriteSpriteDonkey5_16_L 0xfff2, 0x39, 0x20, 0x67, DonkeyTied
+	sta $0x7ffff2
+	WriteSpriteDonkey5_16_L 0xfff2, 0x39, 0x60, 0x69, DonkeyRopeKnot
+
+	// Draw rope
+	WriteSpriteChar 0x7a, 0x70, 0x00, 0x29
+	WriteSpriteChar 0x7a, 0x68, 0x00, 0x29
+	WriteSpriteChar 0x7a, 0x60, 0x02, 0x69
+	WriteSpriteChar 0x7a, 0x5a, 0x03, 0x69
+	//WriteSprite3_16_R 0xfff2, 0x14, 0x00, 0x69, DonkeyRope
+	
+	BlinkingSelection 90, 20 
+
+
+false
+{
+	FuncStart
+	WriteTextOnTitle 0x04, 0xd0, VersionText
+	WriteTextOnTitle 0x04, 0xd8, LogicText
+	
+	WriteTextOnTitle 0x72, 0xc0, PlayerString
+
+	WriteTextOnTitle 0x94, 0xd0, SeedText
+	WriteTextOnTitle 0x94, 0xd8, BossesText
+	FuncEnd
+
+	BlinkingSelection 90, 20
+}
+	plp
+	
+	rtl
+
+GetRandomBackground:
+	// Get Random in range
+	lda #0x8000
+	jsr $=GetRandomRange
+	and #0xffef
+	
+	// Set everything to 8 bit
+	.mx 0x30
+	sep #0x30
+		
+	// Load index
+	ldx #0x09
+	stx $0x2121
+	// Write twice
+	// 1st Access: Lower 8 bits (even address)
+	// 2nd Access: Upper 7 bits (odd address) (upper 1bit = PPU2 open bus)
+	sta $0x2122
+	xba
+	sta $0x2122
+	
+	// Return to normal
+	rep #0x30
+	.mx 0x00
+	rtl
+
+DisableDemo:
+	// Have we started the game?
+	lda $=FirstMusic
+	beq $+b_skip_normal
+		rtl
+b_skip_normal:
+
+	// Is level 1-1?
+	lda $=LevelCode
+	cmp #3
+	bne $+b_skip_1_1
+		rtl
+b_skip_1_1:
+	lda #0
+	sta $=TitleVisited
+
+	// Pull jsr off stack
+	phb
+	pla
+	pla
+
+	jmp $0x8086f6
+	// =====================================================================
+CustomIntroPalette:
+.data16      0x23E0, 0x05AD, 0x09CE, 0x11F0, 0x1611, 0x1A52, 0x01CE, 0x1a52, 0x1a52, 0x1a52, 0x05ad, 0x1a52, 0x09ce, 0x02F7, 0x039C

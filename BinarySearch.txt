@@ -1,0 +1,115 @@
+
+// Upper and lower preset
+// HighIndex and LowIndex pre-adjusted to work with 16bit pointers
+.func BinarySearch_func =Master, _Search, _LowIndex, _HighIndex
+BinarySearch_func:
+BinarySearch_L0:
+//public Int32 binarySearch (List<byte> master, Int32 search, Int32 lowIndex, Int32 highIndex)
+	// Calculate mid so loop conditional could use
+BinarySearch_L4:
+//	var midIndex = ((highIndex + lowIndex) >> 1);
+	.local _MidIndex
+	.local _MidIndex_x2
+		
+	lda $.HighIndex
+	clc
+	adc $.LowIndex
+	lsr a
+	sta $.MidIndex
+	lda $.MidIndex
+	asl a
+	sta $.MidIndex_x2
+	false
+	{
+	lda $.HighIndex
+	beq $+BinarySearch_Le
+		asl a
+		tay
+		cmp [$.Master],y
+		bne $+BinarySearch_Le
+			sec
+			return
+
+BinarySearch_Le:
+	
+	
+	
+	lda $.Search
+	ldy #0
+	cmp [$.Master],y
+	bne $+BinarySearch_Lf
+		sec
+		return
+		}
+BinarySearch_Lf:
+
+BinarySearch_L6:
+//  while (midIndex != lowIndex)
+	lda $.MidIndex
+	cmp $.LowIndex
+	bne $+BinarySearch_L12
+		clc
+		return
+
+BinarySearch_L12:
+//		if (Read16(master[midIndex]) == search)
+	ldy $.MidIndex_x2
+	lda $.Search
+	cmp [$.Master],y
+	bne $+BinarySearch_L15
+BinarySearch_L13:
+	// Return carry as bool
+	sec
+	return
+
+BinarySearch_L15:
+//			// Is our middle lower than search?
+//			else if (master[midIndex] < search)
+	ldy $.MidIndex_x2
+	lda $.Search
+	cmp [$.Master],y
+	bcc $+BinarySearch_L20
+BinarySearch_L18:
+//				lowIndex = midIndex;
+	lda $.MidIndex
+	sta $.LowIndex
+	bra $+BinarySearch_L25
+
+BinarySearch_L20:
+//			// Is our middle higher than search?
+//			else if (master[midIndex] > search)
+	ldy $.MidIndex_x2
+	lda $.Search
+	cmp [$.Master],y
+	bcs $+BinarySearch_L25
+BinarySearch_L23:
+//				highIndex = midIndex;
+	lda $.MidIndex
+	sta $.HighIndex
+
+BinarySearch_L25:
+//			// Calculate a newer midIndex
+//			midIndex = (lowIndex + highIndex >> 2 );
+	lda $.LowIndex
+	clc
+	adc $.HighIndex
+	lsr a
+	sta $.MidIndex
+	lda $.MidIndex
+	asl a
+	sta $.MidIndex_x2
+	jmp $=BinarySearch_L6
+	
+.func Test _Pointer
+Test:
+	lda $.Pointer
+	cmp #0x3128
+	bne $+TestS
+		ldy #0xbdbd
+		
+TestS:
+	return.func Test _Pointer
+
+TestJ:
+	lda $.Pointer
+	return

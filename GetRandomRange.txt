@@ -1,0 +1,41 @@
+    // A = Range
+GetRandomRange:
+php
+    // Keep our number in s+3
+    pha
+    // Find next power of 2 minus one, if not already on it
+    dec    a
+    // Keep this number -1 in s+1
+    pha
+    // Shift bits by 1 and merge them
+    lsr    a
+    ora    $1,s
+    sta    $1,s
+    // Shift bits by 2 and merge them
+    lsr    a
+    lsr    a
+    ora    $1,s
+    sta    $1,s
+    // Shift bits by 4 and merge them
+    lsr    a
+    lsr    a
+    lsr    a
+    lsr    a
+    ora    $1,s
+    sta    $1,s
+    // Shift bits by 8 and merge them
+    xba
+    and    #0x00ff
+    ora    $1,s
+    sta    $1,s
+GetRandomRange_Loop:
+    jsr    $=GetRandom
+    and    $1,s
+    cmp    $3,s
+    bcs    $-GetRandomRange_Loop
+    // Fix stack, not required when using local variables
+    sta    $3,s
+    pla
+    pla
+plp
+    rtl

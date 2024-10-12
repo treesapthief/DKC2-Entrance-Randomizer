@@ -1,0 +1,21 @@
+// Starts in 8 bit
+// Return 0 in A
+// Be safe and preserve x and y
+SelectionCranky:
+	// Change back to 16 bit
+	rep #0x20
+	
+	// Be safe
+	phx
+	phy
+	
+	lda $=CrankySelectionsTaken
+	sta $=HintsTaken
+	sta $=CrankySelectionsTaken
+	
+	
+	// Return
+	lda #0
+	ply
+	plx
+	rtl

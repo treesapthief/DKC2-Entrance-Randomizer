@@ -1,0 +1,1234 @@
+.def	Zero	0
+
+	// ---------------------------------------------------------------------------
+	.macro    LongCall    destination
+		lda #0x006b
+		sta $=Ram_Rtl
+        phk
+        per    $0x0006
+        pea    $_Ram_Rtl-1
+        jmp    $={0}
+    .endm
+
+    // ---------------------------------------------------------------------------
+    // Switch related macros
+
+    .macro    switch        count, defaultDestination, breakDestination
+case_value__:
+        .fill16    {0}, _{1}
+        .def    case_break__    {2}
+    .endm
+
+    .macro    case        value
+case_destination__:
+        .pushaddr
+        .addr    case_value__+{0}*2
+        .data16    _case_destination__
+        .pulladdr
+    .endm
+
+    .macro    break
+        jmp    $_case_break__
+    .endm
+    // ---------------------------------------------------------------------------
+// Array methods
+// =========================
+.macro Array_Push array, value (assume 0 after array and no index = 0)
+    // Save
+    php
+    pha
+    phx
+    // Keep as index
+    ldx #0
+    b_Loop:
+        lda $_Zero+{0},x
+        // Is index empty?
+		beq $+b_LoopEnd
+		inx
+		inx
+        bra $-b_Loop
+
+b_LoopEnd:
+    lda #_Zero+{1}
+    sta $_Zero+{0},x
+    // Restore
+    plx
+    pla
+    plp
+.endm
+// ============================================================================
+.macro 8bit
+	.mx 0x30
+	sep #0x30
+.endm
+
+.macro 16bit
+	.mx 0x00
+	rep #0x30
+.endm
+
+
+// =========================
+
+.macro ScanObjectMap
+	// Get right map
+	lda $=LevelCode
+	asl a
+	tax
+	lda $0xfe0000,x
+	//Index our object map
+	tax
+	// Zero our index
+	lda #0
+	sta $=CollectedIndex
+	// Set up our entity index
+	ldy #0
+	
+b_Loop:
+	lda $0x00,x
+	beq $+b_LoopEnd
+	//836 coin
+	lda $0x06,x
+	cmp #0x0836
+	bne $+b_skip_match
+		// Save X
+		phx
+		lda $=CollectedIndex
+		tax
+		// Save the current index
+		tya
+		sta $=CoinArray,x
+		// Increment and store our index
+		inx
+		inx
+		txa
+		sta $=CollectedIndex
+		// Reobtain X
+		plx
+b_skip_match:
+	
+	// Look at next object
+	// Y holds entity index, X holds current objmap index
+	inx
+	inx
+	inx
+	inx
+	inx
+	inx
+	inx
+	inx
+	iny
+	iny
+	bra $-b_Loop
+	
+b_LoopEnd:
+.endm
+
+
+
+
+.macro FuncStart
+    phd
+    lda    #_VStack_Page
+    tcd
+    .vstack        _VStack_Start
+.endm
+
+.macro WhatIsDP
+    phd
+	pla
+.endm
+
+.macro WhatWasLastOnStack
+	pla
+	pha
+.endm
+
+
+
+
+
+.macro FuncEnd
+	pld
+.endm
+
+.macro FuncStartKeepA
+    phd
+    pea    $_VSTACK_PAGE
+    pld
+    .vstack        _VSTACK_START
+.endm
+
+.macro Array8Bit
+	lda #_Zero+{0},x
+	and 0x00ff
+.endm
+
+
+// RegularBinarySearchLand
+.macro RegularBinarySearchLand
+	//public Int32 binarySearch (List<byte> master, Int32 search, Int32 lowIndex, Int32 highIndex)
+	.precall BinarySearch_func =Master, _Search, _LowIndex, _HighIndex
+		lda #_MasterLand
+        sta $.Param_Master
+        lda #_MasterLand/0x100
+        sta $.Param_Master+1
+		// Put pointer in a to store
+        tya
+        sta $.Param_Search
+		// Put pointer in x for safe keeping
+		tyx
+		// Set lowest and max index
+		lda #0
+		sta $.Param_LowIndex
+		lda #_MasterLand_end-MasterLand
+		lsr a
+		sta $.Param_HighIndex
+		
+    call
+	// Reinstate y
+	txy
+.endm
+
+// RegularBinarySearchWater
+.macro RegularBinarySearchWater
+	//public Int32 binarySearch (List<byte> master, Int32 search, Int32 lowIndex, Int32 highIndex)
+	.precall BinarySearch_func =Master, _Search, _LowIndex, _HighIndex
+		lda #_MasterWater
+        sta $.Param_Master
+        lda #_MasterWater/0x100
+        sta $.Param_Master+1
+		// Put pointer in a to store
+        tya
+        sta $.Param_Search
+		// Put pointer in x for safe keeping
+		tyx
+		// Set lowest and max index
+		lda #0
+		sta $.Param_LowIndex
+		lda #_MasterWater_end-MasterWater
+		lsr a
+		sta $.Param_HighIndex
+		
+    call
+	// Reinstate y
+	txy
+.endm
+
+// EnemySelectLand
+.macro EnemySelectLand 
+	.precall GetRandomFromArray_func =LUT, _Size
+		lda #_AvailableLandEnemies
+        sta $.Param_LUT
+        lda #_AvailableLandEnemies/0x100
+        sta $.Param_LUT+1
+		// Set size
+		lda #_AvailableLandEnemies_end-AvailableLandEnemies
+		sta $.Param_Size
+		
+    call
+.endm
+
+// LandEnemiesMinusFall
+.macro EnemySelectMinusFall
+	.precall GetRandomFromArray_func =LUT, _Size
+		lda #_LandEnemiesMinusFall
+        sta $.Param_LUT
+        lda #_LandEnemiesMinusFall/0x100
+        sta $.Param_LUT+1
+		// Set size
+		lda #_LandEnemiesMinusFall_end-LandEnemiesMinusFall
+		sta $.Param_Size
+		
+    call
+.endm
+
+// EnemySelectAll
+.macro EnemySelectAll
+	.precall GetRandomFromArray_func =LUT, _Size
+		lda #_AvailableAllEnemies
+        sta $.Param_LUT
+        lda #_AvailableAllEnemies/0x100
+        sta $.Param_LUT+1
+		// Set size
+		lda #_AvailableAllEnemies_end-AvailableAllEnemies
+		sta $.Param_Size
+		
+    call
+.endm
+
+// EnemySelectMinusKruncha
+.macro EnemySelectMinusKruncha
+	.precall GetRandomFromArray_func =LUT, _Size
+		lda #_AvailableLandEnemiesMinusKruncha
+        sta $.Param_LUT
+        lda #_AvailableLandEnemiesMinusKruncha/0x100
+        sta $.Param_LUT+1
+		// Set size
+		lda #_AvailableLandEnemiesMinusKruncha_end-AvailableLandEnemiesMinusKruncha
+		sta $.Param_Size
+		
+    call
+.endm
+
+.macro ReadEntityArray
+	lda $=EntityArray,x
+	tay
+
+.endm
+
+
+// Write to SRAM
+.macro WriteCheckpoint
+	// Upper 8 bits = level, lower 8 = entrance
+	lda $=LevelCode
+	xba
+	//clc
+	ora $=ParentEntrance
+	sta $=CheckpointLocation
+.endm
+
+// Count bosses beaten
+.macro CountBossesBeat
+	// Change dp to 32 (SRAM)
+	ChangeDP 0x0032
+
+	lda $=BossCompletionFlags
+	// Hold in x as ror mutates
+	tax
+	lda #0
+	
+	// Shift over to count bits set (in carry)
+	ror $_BossCompletionFlags
+	adc #0
+	ror $_BossCompletionFlags
+	adc #0
+	ror $_BossCompletionFlags
+	adc #0
+	ror $_BossCompletionFlags
+	adc #0
+	ror $_BossCompletionFlags
+	adc #0
+		
+	// Store that number
+	sta $=NumberOfBossesClear
+	// Restore boss flags since read + write op 
+	txa
+	sta $=BossCompletionFlags
+
+	// Fix dp
+	pld
+.endm
+
+
+.macro ChangeDP    dp
+	phd
+	lda #_Zero+{0}
+	tcd
+.endm
+
+.macro CompareDoneVsRequired
+	// Load required
+	lda $=RequiredBosses
+	// Fix off by 1 error
+	dec a
+	cmp $=NumberOfBossesClear
+	bcs $+b_1
+		// We beat enough so flag all as done
+		lda #0x001f
+		sta $=BossCompletionFlags
+		sta $=BossFlagsAutoSave
+	b_1:
+.endm
+
+.macro RestrictThisEntity    entitycode
+	cpy    #_Zero+{0}
+	bne    $+b_1
+		// Carry is already set when equal
+		rtl
+	b_1:
+.endm
+
+.macro RestrictAll
+	sec
+	rtl
+.endm
+
+.macro RtlCreateEntity
+	// Remove 24 bits from stack
+	php
+	pla
+	pla
+	
+	// Restore X and P
+	plx
+	plp
+	
+	// Remove 16 more
+	pla
+	
+	// Restore bank
+	plb
+	
+	rtl
+.endm
+
+
+.macro EntityTo_c486 og
+	// Push to stack to compare
+	phy
+	lda #_Zero+{0}
+	cmp $1,s
+	bne $+b_1
+		// Fix stack
+		ply
+		// Load new entity in Y
+		ldy #0xc486
+		// Jump to end of macro
+		bra $+b_2
+b_1:
+
+	// Restore to compare later
+	pla
+	tay
+b_2:
+	nop
+.endm
+
+.macro    UniqueItemMac        address
+	cmp    #_Zero+{0}
+	beq    $+b_ItemFound
+.endm
+
+.macro    IncreaseDeathCounter
+	lda $=DeathNumber
+	// Cap at 9999
+	cmp #9999
+	beq $+b_1
+		inc a
+		sta $=DeathNumber
+b_1:
+.endm
+
+.macro    IncreaseEntranceCounter
+	lda $=TotalEntrances
+	// Cap at 9999
+	cmp #9999
+	beq $+b_1
+		inc a
+		sta $=TotalEntrances
+b_1:
+.endm
+
+.macro    IncreaseLivesCounter
+	lda $=TotalLives
+	// Cap at 9999
+	cmp #9999
+	beq $+b_1
+		inc a
+		sta $=TotalLives
+b_1:
+.endm
+
+// Clear stack
+.macro    ClearStack
+	lda #0
+	ldx #0x0100
+	dex
+	dex
+b_loop:
+	sta $0x7e0100,x
+	dex
+	dex
+	bpl $-b_loop
+.endm
+
+.macro DMALoop
+	ldx #0x1000
+	dex
+	b_Loop:
+		DMALoop2
+		dex
+		bpl $-b_Loop
+	b_LoopEnd:
+.endm
+
+.macro DMALoop2
+	CreditsDMA
+	CreditsDMA
+	CreditsDMA
+	CreditsDMA
+	CreditsDMA
+.endm
+
+.macro ToString var, stringDestination, digits
+	.precall ToStringFunc _Number, =StringDestination, _digits
+		lda $={0}
+		sta $.Param_Number
+		lda #_Zero+{1}
+		sta $.Param_StringDestination
+		lda #_Zero+{1}/0x100
+		sta $.Param_StringDestination+1
+		lda #_Zero+{2}
+		sta $.Param_digits
+	call
+.endm
+
+.macro ToString var, stringDestination, digits
+	.precall ToStringFunc _Number, =StringDestination, _digits
+		lda $={0}
+		sta $.Param_Number
+		lda #_Zero+{1}
+		sta $.Param_StringDestination
+		lda #_Zero+{1}/0x100
+		sta $.Param_StringDestination+1
+		lda #_Zero+{2}
+		sta $.Param_digits
+	call
+.endm
+
+.macro ToString2 var, stringDestination
+	.precall ToString2Func _Number, =StringDestination
+		lda $={0}
+		sta $.Param_Number
+		lda #_Zero+{1}
+		sta $.Param_StringDestination
+		lda #_Zero+{1}/0x100
+		sta $.Param_StringDestination+1
+	call
+.endm
+
+.macro FormatString string
+	.precall FormatStringFunc =StringAddress
+		lda #_Zero+{0}
+		sta $.Param_StringAddress
+		lda #_Zero+{0}/0x100
+		sta $.Param_StringAddress+1
+	call
+.endm
+
+.macro    ResetStack
+	// Reset stack
+	//ClearStack
+	lda #0x01ff
+	tcs
+.endm
+// ===========================================================================
+.macro PlayerStringIntro 
+.endm
+// ===========================================================================
+.macro BlinkingSelection on, off
+	lda $=GameMode
+	beq $+b_skip_2pt
+		WriteSpriteChar 0x60, 0xb8, 0x1d, 0x3e
+		bra $+b_CheckBlink
+b_skip_2pt:
+	WriteSpriteChar 0x60, 0xb8, 0x1c, 0x3e
+
+// Do we blink?
+b_CheckBlink:
+
+	lda $=BlinkingTimer
+	inc a
+	sta $=BlinkingTimer
+	
+	cmp #_Zero+{0}
+	bcc $+b_draw
+		jmp $=b_continued1
+	b_draw:
+		WriteSpriteChar 0x58, 0xb8, 0x29, 0x3e
+		WriteSpriteChar 0x9b, 0xb8, 0x2a, 0x3e
+		
+b_continued1:
+	
+	lda $=BlinkingTimer
+	cmp #_Zero+{0}+{1}
+	bcc $+b_skip_zero
+		lda #0
+		sta $=BlinkingTimer
+b_skip_zero:
+
+
+.endm
+
+// ===========================================================================
+
+.macro DrawPlayer x, y
+
+
+	WriteSpriteChar {0}+24, {1}+0, 4, 0x32
+	WriteSpriteChar {0}+32, {1}+0, 5, 0x32
+	WriteSpriteChar {0}+40, {1}+0, 6, 0x32
+	WriteSpriteChar {0}+48, {1}+0, 7, 0x32
+	WriteSpriteChar {0}+56, {1}+0, 8, 0x32
+	WriteSpriteChar {0}+64, {1}+0, 9, 0x32
+	
+
+.endm
+
+
+.macro DrawPlayerArrows x, y
+
+
+	WriteSpriteChar {0}+0, {1}+0, 0x29, 0x32
+	WriteSpriteChar {0}+72, {1}+0, 0x2a, 0x32
+	
+
+.endm
+
+// ----------------------------------------------------------------------------
+.macro WriteSprite3_16_R x, y, tile, attr, image,
+
+	// Attribute/starting tile
+	lda #_Zero+{3}*0x100+{2}
+	sta $0x34
+
+	// d371fc
+	lda #_Zero+{4}
+	sta $0x40
+	inc a
+	sta $0x44
+	lda #_Zero+{4}/0x100
+	sta $0x41
+	sta $0x45
+	
+	// Pos on screen X
+	lda #_Zero+{0}
+	sta $0x72
+	
+	// Pos on screen Y
+	lda #_Zero+{1}
+	sta $0x74
+	
+	//lda #0x002c
+	//sta $0x78
+	
+	lda #_Zero+{2}
+	sta $0x32
+		
+	LongCall RenderImage3_16_R
+	//jsr $=RenderImage3_16_R
+.endm
+
+.macro WriteSpriteDixie_3_16_L x, y, tile, attr, image,
+
+	// Attribute/starting tile
+	lda #_Zero+{3}*0x100+{2}
+	sta $0x34
+
+	// d371fc
+	lda #_Zero+{4}
+	sta $0x40
+	inc a
+	sta $0x44
+	lda #_Zero+{4}/0x100
+	sta $0x41
+	sta $0x45
+	
+	// Pos on screen X
+	lda #_Zero+{0}
+	sta $0x72
+	
+	// Pos on screen Y
+	lda #_Zero+{1}
+	sta $0x74
+	
+	//lda #0x002c
+	//sta $0x78
+	
+	lda #_Zero+{2}
+	sta $0x32
+		
+	LongCall RenderImageDixie_3_16_L
+.endm
+
+.macro WriteSpriteDonkey5_16_L x, y, tile, attr, image,
+
+	// Attribute/starting tile
+	lda #_Zero+{3}*0x100+{2}
+	sta $0x34
+
+	// d371fc
+	lda #_Zero+{4}
+	sta $0x40
+	inc a
+	sta $0x44
+	lda #_Zero+{4}/0x100
+	sta $0x41
+	sta $0x45
+	
+	// Pos on screen X
+	lda #_Zero+{0}
+	sta $0x72
+	
+	// Pos on screen Y
+	lda #_Zero+{1}
+	sta $0x74
+	
+	//lda #0x002c
+	//sta $0x78
+	
+	lda #_Zero+{2}
+	sta $0x32
+		
+	LongCall RenderImageDonkey_5_16_L
+.endm
+// ============================================================================
+.macro DrawGameMode x, y, tile
+	// 0x23
+	WriteSpriteChar {0}, {1}, {2}, 0x23
+	WriteSpriteChar {0}+8, {1}, {2}+8, 0x23
+	
+.endm
+	
+
+// ============================================================================
+.macro WriteSpriteChar x, y, tile, attr
+	ldx $0x70
+	
+	// Set y and x
+	.def TempX__	Zero+{0}
+	.def TempY__	Zero+{1}	
+	lda #_TempY__*0x100+TempX__
+	sta $0,x
+
+	// Set attr and tile
+	lda #_Zero+{3}*0x100+{2}
+	sta $2,x
+		
+	inx
+	inx
+	inx
+	inx
+	stx $0x70
+	
+.endm
+// ============================================================================
+.macro  WriteTextOnTitle x, y, text
+	FuncStart
+		.precall TitleHud_func =Address, _Position
+			lda #_Zero+{1}*0x100+{0}
+			sta $.Param_Position
+			lda #_Zero+{2}
+			sta $.Param_Address
+			lda #_Zero+{2}/0x100
+			sta $.Param_Address+1
+		call
+	FuncEnd
+.endm
+
+// ----------------------------------------------------------------------------
+.macro WriteCopyright x, y
+
+	//.macro WriteRow tile, window, times, x, y
+			WriteRow 0x0000, 0x0200, 23, {0}, {1}+0
+			WriteRow 0x0018, 0x0200, 23, {0}, {1}+1
+			WriteRow 0x0030, 0x0200, 23, {0}, {1}+2
+			WriteRow 0x0048, 0x0200, 23, {0}, {1}+3
+			WriteRow 0x0060, 0x0200, 23, {0}, {1}+4
+			WriteRow 0x0078, 0x0200, 23, {0}, {1}+5
+			WriteRow 0x0090, 0x0200, 23, {0}, {1}+6
+			WriteRow 0x00a8, 0x0200, 23, {0}, {1}+7
+			WriteRow 0x00c0, 0x0200, 23, {0}, {1}+8
+			WriteRow 0x00d8, 0x0200, 23, {0}, {1}+9
+			
+			WriteRow 0x0070, 0x0100, 23, {0}, {1}+10
+			WriteRow 0x0088, 0x0100, 23, {0}, {1}+11
+			WriteRow 0x00a0, 0x0100, 23, {0}, {1}+12
+
+.endm
+.macro WriteTitleTop x, y, params
+	//.macro WriteRow tile, window, times, x, y			
+			WriteRow 0x0000, {2}, 30, {0}, {1}
+			WriteRow 0x001f, {2}, 30, {0}, {1}+1
+			WriteRow 0x003e, {2}, 30, {0}, {1}+2
+			WriteRow 0x005d, {2}, 30, {0}, {1}+3
+			WriteRow 0x007c, {2}, 30, {0}, {1}+4
+			WriteRow 0x009b, {2}, 30, {0}, {1}+5
+.endm
+
+.macro WriteTitleBottom x, y, params
+	//.macro WriteRow tile, window, times, x, y			
+			WriteRow 0x0000, {2}, 14, {0}, {1}+0
+			WriteRow 0x000f, {2}, 14, {0}, {1}+1
+			WriteRow 0x001e, {2}, 14, {0}, {1}+2
+			WriteRow 0x002d, {2}, 14, {0}, {1}+3			
+.endm
+
+.macro WriteTitleDiddy x, y, params
+	//.macro WriteRow tile, window, times, x, y
+			WriteRow 0x0000, {2}, 8, {0}, {1}+0
+			WriteRow 0x0009, {2}, 8, {0}, {1}+1
+			WriteRow 0x0012, {2}, 8, {0}, {1}+2
+			WriteRow 0x001b, {2}, 8, {0}, {1}+3			
+			WriteRow 0x0024, {2}, 8, {0}, {1}+4			
+			WriteRow 0x002d, {2}, 8, {0}, {1}+5			
+			WriteRow 0x0036, {2}, 8, {0}, {1}+6			
+.endm
+
+.macro WriteTitleDixie x, y, params
+	//.macro WriteRow tile, window, times, x, y			
+			WriteRow 0x0040, {2}, 8, {0}, {1}+0
+			WriteRow 0x0049, {2}, 8, {0}, {1}+1
+			WriteRow 0x0052, {2}, 8, {0}, {1}+2
+			WriteRow 0x005b, {2}, 8, {0}, {1}+3			
+			WriteRow 0x0064, {2}, 8, {0}, {1}+4			
+			WriteRow 0x006d, {2}, 8, {0}, {1}+5			
+.endm
+
+.macro WriteTitleDk x, y, params
+	//.macro WriteRow tile, window, times, x, y
+			WriteRow 0x0080, {2}, 7, {0}, {1}+0
+			WriteRow 0x0088, {2}, 7, {0}, {1}+1
+			WriteRow 0x0090, {2}, 7, {0}, {1}+2
+			WriteRow 0x0098, {2}, 7, {0}, {1}+3			
+			WriteRow 0x00a0, {2}, 7, {0}, {1}+4			
+			WriteRow 0x00a8, {2}, 7, {0}, {1}+5			
+			WriteRow 0x00b0, {2}, 7, {0}, {1}+6
+			WriteRow 0x00b8, {2}, 7, {0}, {1}+7
+			WriteRow 0x00c0, {2}, 7, {0}, {1}+8
+			WriteRow 0x00c8, {2}, 7, {0}, {1}+9
+.endm
+
+// ----------------------------------------------------------------------------
+.macro WriteToVRAM dest, src, count
+	lda #_Zero+{0}
+	sta $0x2116
+	
+	lda #_Zero+{1}
+	ldx #_Zero+{1}/0x10000
+	ldy #_Zero+{2}
+
+	jsr $=WriteWithDMA
+
+
+.endm
+// ----------------------------------------------------------------------------
+.macro PaletteDMA 24BitAddress, amount, paletteSlot
+	lda #_Zero+{0}
+	// Lower 16 bits to transfer
+	sta $0x4302
+	// # of bytes to transfer
+	lda #_Zero+{1}
+	sta $0x4305
+	// Sets 4300 for param, and 4301 as type 22 (cgram write)
+	lda #0x2200
+	sta $0x4300
+	lda #_Zero+{2}
+	ldx #_Zero+{0}/0x10000
+	
+	.mx 0x30
+	sep #0x30
+
+	// Bank
+	stx $0x4304
+	// Palette slot
+	sta $0x2121
+
+
+	// Start DMA
+	lda #1
+	sta $0x420b
+	rep #0x30
+	.mx 0x00
+
+.endm
+// ----------------------------------------------------------------------------
+.macro ClearCustomImage
+
+	// Clear custom image
+	lda #0x1000
+	sta $0x2116
+	
+	lda #0xd000
+	ldx #0x007f
+	ldy #0x2000
+
+	jsr $=WriteWithDMA
+
+	// Clear custom image
+	lda #0x2000
+	sta $0x2116
+	
+	lda #0xd000
+	ldx #0x007f
+	ldy #0x2000
+
+	jsr $=WriteWithDMA
+
+
+.endm
+
+.macro EnableVRAM
+	.mx 0x20
+	sep #0x20
+	// Enable VRAM
+	lda #0x80
+	sta $0x2115
+	rep #0x20
+	.mx 0x00
+.endm
+
+// First visit
+.macro    GoToCredits
+
+	lda #0x001e
+	// Start song
+	jsr $0xb58132
+
+	// Enable VRAM
+	EnableVRAM
+	
+	// Display credits/cast of characters
+	jsr $0x80f3bb
+
+	EnableVRAM
+	
+	.mx 0x20
+	sep #0x20
+	
+	lda #0x80
+	sta $0x0512
+	sta $0x2100
+	
+	lda #0
+	sta $0x420c
+
+	// Horizontal scroll. Write twice
+	lda #0x00
+	sta $0x210f
+	lda #0x01
+	sta $0x210f
+	
+	
+	// Look at last sprite palette
+	lda  #0xf0
+	sta $0x2121
+	
+	// Loop through palette indexes
+	ldx #0x0020
+b_loop:
+		lda $0x213b
+		sta $=CreditPalette,x
+		dex
+		bne $-b_loop
+
+	// Look at the second bg palette
+	lda  #0x20
+	sta $0x2121
+	
+	ldx #0x0020
+b_loop:
+		lda $=CreditPalette,x
+		sta $0x2122
+		dex
+		bne $-b_loop
+	
+
+	// Chars
+	lda #2
+	sta $0x210b
+	
+	// Main screen fix (useful?)
+	lda #0x13
+	sta $0x212c
+	
+	// Disable color math
+	stz $0x2130
+	stz $0x2131
+
+	
+	rep #0x20
+	.mx 0x00
+	
+	EnableVRAM
+	
+	
+
+	jsr $=DisplayStats
+	
+
+
+	SetupNMIPointer 0xd1a0
+	
+.endm
+
+.macro ClearIntroTileMap val
+	lda #_Zero+{0}
+	ldx #0x0800
+	dex
+	dex
+	b_Loop:
+		sta $=IntroTileMap,x
+		dex
+		dex
+		bpl $-b_Loop
+		
+	
+
+.endm
+
+.macro    SetupNMIPointer pointer
+
+	ResetStack
+
+	// Set nmi pointer
+	lda #_Zero+{0}
+	sta $0x20
+	
+	
+b_wai:
+	bra $-b_wai
+.endm
+
+
+.macro    LoadCompressedImage
+	//lda #0x003a
+	//jsr $0xbb80b0
+.endm
+
+// ----------------------------------------------------------------------------
+.macro    WriteChar
+	.precall WriteCharFunc _charIndex, _x, _y
+		sta $.Param_charIndex
+		stx $.Param_x
+		sty $.Param_y
+	call
+.endm
+
+.macro    WriteString x, y, addr
+	.precall WriteStringFunc =Address, _x, _y
+		lda #_Zero+{2}
+		sta $.Param_Address
+		lda #_Zero+{2}/0x100
+		sta $.Param_Address+1
+		
+		ldx #_Zero+{0}
+		stx $.Param_x
+		ldy #_Zero+{1}
+		sty $.Param_y
+	call
+.endm
+
+// ============================================================================
+// .func WriteStringIntroFunc =Address, _x, _y
+
+.macro    WriteStringIntro x, y, addr
+	.precall WriteStringIntroFunc =Address, _x, _y
+		lda #_Zero+{2}
+		sta $.Param_Address
+		lda #_Zero+{2}/0x100
+		sta $.Param_Address+1
+		
+		ldx #_Zero+{0}
+		stx $.Param_x
+		ldy #_Zero+{1}
+		sty $.Param_y
+	call
+.endm
+
+.macro    WriteCharIntro
+	.precall WriteCharIntroFunc _charIndex, _x, _y
+		sta $.Param_charIndex
+		stx $.Param_x
+		sty $.Param_y
+	call
+.endm
+// ============================================================================
+.macro    WriteHeadRight Head, x, y
+	.precall WriteHeadRightFunc _Head, _x, _y
+		lda #_Zero+{0}
+		sta $.Param_Head
+		ldx #_Zero+{1}
+		stx $.Param_x
+		ldy #_Zero+{2}
+		sty $.Param_y
+	call
+.endm
+
+.macro    WriteHeadLeft Head, x, y
+	.precall WriteHeadLeftFunc _Head, _x, _y
+		lda #_Zero+{0}
+		sta $.Param_Head
+		ldx #_Zero+{1}
+		stx $.Param_x
+		ldy #_Zero+{2}
+		sty $.Param_y
+	call
+.endm
+
+// ----------------------------------------------------------------------------
+// 
+.macro Kill16Cycles
+	xba
+	xba
+	xba
+	xba
+	nop
+	nop
+.endm
+
+.macro SetUpDivide $var, #numberToDivideBy
+	lda $.{0}
+	sta $0x4204
+	
+	// Set 8 bit divisor and start division
+	lda #_Zero+{1}
+	sep #0x20
+	sta $0x4206
+	rep #0x20
+.endm
+
+.macro TimeMaxOut low, high, val
+	// Did the smaller unit hit val?
+	lda $={0}
+	cmp #_Zero+{2}
+	bcc $+b_skip_increment
+		// If so, increment high and set low to 0
+		lda $={1}
+		inc a
+		sta $={1}
+		tdc
+		sta $={0}
+	
+b_skip_increment:
+.endm
+
+.macro WriteRow tile, window, times, x, y
+	.precall WriteRow_func _Tile, _Window, _Times, _x, _y
+		lda #_Zero+{0}
+		sta $.Param_Tile
+		lda #_Zero+{1}
+		sta $.Param_Window
+		lda #_Zero+{2}
+		sta $.Param_Times
+		lda #_Zero+{3}
+		sta $.Param_x
+		lda #_Zero+{4}
+		sta $.Param_y
+	call
+.endm
+
+.macro    CreditsDMA
+	//lda #2
+	//sta $0x2115
+	// Set vram address
+	lda #_VRAMADDRESS
+	sta $0x2116
+
+	lda #_CreditTileMap
+	ldx #_CreditTileMap/0x10000
+	ldy #0x0800
+
+	jsr $=WriteWithDMA
+.endm
+
+.macro ArrayStruct name, number
+	// Create vars
+	.def {0}_Address Zero+0xb07200+{1}*0x0134
+	.def {0}_Length Zero+0xb07330+{1}*0x0134
+	.def {0}_MaxLength Zero+0xb07332+{1}*0x0134
+	
+	// Set our defaults
+	tdc
+	sta $={0}_Length
+	lda #150
+	sta $={0}_MaxLength
+.endm
+
+// PrintNumbers 0xtile, 0xpos1, 0xpos2, 0xattr
+.macro PrintNumbers
+	lda #_Zero+{0}
+	.precall CustomHUD_func    _tile, _position, _attribute
+        sta $.Param_tile
+        lda #_Zero+{1}
+        sta $.Param_position
+        lda #_Zero+{3}
+        sta $.Param_attribute
+    call
+	lda #_Zero+{0}
+	clc
+	adc #0x000a
+	.precall CustomHUD_func    _tile, _position, _attribute
+        sta $.Param_tile
+        lda #_Zero+{2}
+        sta $.Param_position
+        lda #_Zero+{3}
+        sta $.Param_attribute
+    call
+.endm
+
+
+.macro    SetHUDFlag
+	// Have my hud display
+	lda #0x00b0
+	sta $=CustomTextTimer
+.endm
+
+.macro    GetSetupCheckpoint
+	// Top 8 parent, bottom 8 entrance
+	lda $=Parent
+	xba
+	ora $_ParentEntrance
+.endm
+
+.macro  GetBananaNum
+	// Display world
+	lda $=LevelCode
+	tax
+	// Lookup world number
+	lda $=WorldLUT,x
+	and #0x00ff
+	
+	clc
+	adc #0x01cc
+.endm
+
+// UniqueEntrances value in Y
+.macro UniqueEntrances
+	// Is the entrance here?
+	// 16 bit binary search
+	.precall BinarySearch_func =Master, _Search, _LowIndex, _HighIndex
+		lda #_EntrancesFound_Address
+        sta $.Param_Master
+        lda #_EntrancesFound_Address/0x100
+        sta $.Param_Master+1
+		// Put pointer in a to store
+        tya
+        sta $.Param_Search
+		// Put pointer in x for safe keeping
+		tyx
+		// Set lowest and max index
+		lda #0
+		sta $.Param_LowIndex
+		lda $=EntrancesFound_Length
+		inc a
+		sta $.Param_HighIndex
+		
+    call
+	
+	// Reobtain y
+	txy
+
+	bcs $+b_skip_Unique
+	.precall Array_Insert_Sorted_Func    =arrBottom, =arrMid, _arrTop, _value
+			lda #_EntrancesFound_Address
+			sta $.Param_arrBottom
+			lda #_EntrancesFound_Address/0x100
+			sta $.Param_arrBottom+1
+			
+			lda $=EntrancesFound_Length
+			sta $.Param_arrMid
+			
+			lda $=EntrancesFound_MaxLength
+			sta $.Param_arrTop
+			
+			tya
+			sta $.Param_value
+			
+		call
+		lda $=EntrancesFound_Length
+		inc a
+		sta $=EntrancesFound_Length
+b_skip_Unique:
+.endm

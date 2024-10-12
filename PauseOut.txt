@@ -1,0 +1,27 @@
+PauseOut:
+	lda #1
+	sta $=DeathFlag
+	
+	// Unpause game
+	lda $=MiscFlags
+	and #0xffbf
+	sta $=MiscFlags
+
+	jmp $=MasterChangeLevelFunc
+	jmp $0xbbbdb7
+	
+ForceDK:
+	lda $=BossCompletionFlags
+	cmp #0x001f
+	bne $+ForceDK_skip_bossesClear
+		lda $=LevelCode
+		// 61 is kkr
+		cmp #0x0061
+		bne $+ForceDK_skip_61
+			// Return replaced
+			lda $0x08fc
+			bit #3
+	ForceDK_skip_61:
+ForceDK_skip_bossesClear:
+	lda #0
+	rtl

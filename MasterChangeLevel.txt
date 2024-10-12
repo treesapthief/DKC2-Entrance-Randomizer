@@ -1,0 +1,1018 @@
+// Only A is 100% free
+MasterChangeLevelFunc:
+sta $0x7ffffe
+
+	// Zero percentage completion
+	stz $0x0904
+
+	// Preserve registers
+	phx
+	phy
+	
+	SetHUDFlag
+
+
+	// Save to SRAM
+	lda $=CurrentCoinsWRAM
+	sta $=CurrentCoinsSRAM
+
+	lda $=NumberOfLives
+	sta $=TotalLives
+
+	// Set our iframe var
+	lda #0x0050
+	sta $=IFrames
+	
+	// Zero animals/remove animals with each entrance
+	lda #0
+	sta $=AnimalMount
+	sta $=IsAnimal
+
+	// Do we force 2 kongs?
+	lda $=RandomizerFlags
+	bit #4
+	beq $+MasterChangeLevelFunc_skip_kongNumber
+		// Flag is set so force 2 kongs on entrance
+		lda $=MiscFlags
+		ora #0x4000
+		sta $=MiscFlags
+MasterChangeLevelFunc_skip_kongNumber:
+		
+	// Did we beat a boss?
+	lda $=BossDefeatFlag
+	beq $+MasterChangeLevelFunc_skip_boss
+		lda #0
+		sta $=BossDefeatFlag
+		lda #3
+		sta $=Parent
+		lda #0
+		sta $=ParentEntrance
+		
+		jsr $=RestartMusic
+		
+		// Reobtain
+		ply
+		plx
+		jmp $=ReturnFromChild
+
+MasterChangeLevelFunc_skip_boss:
+		
+	// Did we go to funky?
+	lda $=FunkyFlag
+	beq $+MasterChangeLevelFunc_skip_funky
+		jmp $=MasterChangeLevelFunc_Funky
+MasterChangeLevelFunc_skip_funky:
+
+	// Did we go to Cranky?
+	lda $=CrankyFlag
+	beq $+MasterChangeLevelFunc_skip_cranky
+		jmp $=MasterChangeLevelFunc_Cranky
+MasterChangeLevelFunc_skip_cranky:
+	
+	// Are we in kkr?
+	jsr $=AreWeInKKR
+
+
+	jsr $=Master_death
+	
+	// Are we in a boss?
+	jsr $=InBoss
+	bcs $+MasterChangeLevelFunc_skip_inboss
+
+MasterChangeLevelFunc_skip_inboss:
+
+	// Are we in kkr?
+	lda $=LevelCode
+	cmp #0x0061
+	beq $+MasterChangeLevelFunc_skip_inboss_skip_kkr
+		
+MasterChangeLevelFunc_skip_inboss_skip_kkr
+	
+	// Save kong number to SRAM
+	lda $=MiscFlags
+	and #0x4000
+	sta $=KongNumber
+	// Also save which Kong you are
+	lda $=CurrentKong
+	sta $=CurrentKongSRAM
+	
+	
+	// Trick game to think we are going lvl to lvl
+	lda #1
+	sta $=HasParentFlag
+
+	
+	// Look up LevelGoingToCode as the game's is unreliable
+	// Using the provided LevelCode
+
+	jsr $=ReadMatrix
+
+	tax
+
+	lda $=RandomizerFlags
+	bit #2
+	beq $+MasterChangeLevelFunc_skip_checkpoint
+		txa
+		and #0xff00
+		cmp #0x6100
+		beq $+MasterChangeLevelFunc_skip_checkpoint
+			txa
+			sta $=CheckpointLocation
+MasterChangeLevelFunc_skip_checkpoint:
+	
+	txa
+	and #0x00ff
+	sta $=ParentEntrance
+	// Get parent
+	txa
+	xba
+	and #0x00ff
+	sta $=Parent
+	
+	IncreaseEntranceCounter
+	
+	GetSetupCheckpoint
+	tay
+	phx
+	
+	FuncStartKeepA
+	// Add to array of visited
+	UniqueEntrances
+	FuncEnd
+	
+	plx
+			
+	jsr $=RestartMusic
+	
+	jsr $=HardWritten
+MasterChangeLevelFunc_return:
+	// Clear our 'flag'
+	lda #0
+	sta $=EarlyParentEntrance
+		
+	jsr $=Master_constants
+	
+	// Bandaid fix kkr
+//	lda $=Parent
+//	cmp #0x0061
+//	bne $+MasterChangeLevelFunc_returnskip_kkr
+//		lda $=MiscFlags
+//		and #0xfbff
+//		sta $=MiscFlags
+sta $0x7ffff4
+	// Bandaid fix errors
+	lda $=Parent
+	tax
+	lda $=SongsRandoLUT,x
+	and #0x00ff
+
+	cmp #0
+	bne $+MasterChangeLevelFunc_returnskip_kkr
+		sta $=ParentEntrance
+		lda #3
+		sta $=Parent
+		
+		jsr $=RestartMusic
+MasterChangeLevelFunc_returnskip_kkr:
+
+	// Reobtain
+	ply
+	plx
+	jmp $=ReturnFromChild
+
+
+// Check if going to boss, carry set == true
+GoingToBoss:
+	lda $=Parent
+	
+	// 09 is Krow1
+	cmp #0x0009
+	bne $+GoingToBoss_skip_09
+		sec
+		rtl
+GoingToBoss_skip_09:
+
+	// 21 is Kleever
+	cmp #0x0021
+	bne $+GoingToBoss_skip_21
+		sec
+		rtl
+GoingToBoss_skip_21:
+	
+	// 63 is Klubba
+	cmp #0x0063
+	bne $+GoingToBoss_skip_63
+		sec
+		rtl
+GoingToBoss_skip_63:
+	
+	// 60 is Bee
+	cmp #0x0060
+	bne $+GoingToBoss_skip_60
+		sec
+		rtl
+GoingToBoss_skip_60:
+	
+	// 0d is Krow 2
+	cmp #0x000d
+	bne $+GoingToBoss_skip_0d
+		sec
+		rtl
+GoingToBoss_skip_0d:
+		
+		// False
+		clc
+		rtl
+
+// Check if in boss, carry set == true
+InBoss:
+	lda $=LevelCode
+	
+	// 09 is Krow1
+	cmp #0x0009
+	bne $+InBoss_skip_09
+		sec
+		rtl
+InBoss_skip_09:
+
+	// 21 is Kleever
+	cmp #0x0021
+	bne $+InBoss_skip_21
+		sec
+		rtl
+InBoss_skip_21:
+	
+	// 63 is Klubba
+	cmp #0x0063
+	bne $+InBoss_skip_63
+		sec
+		rtl
+InBoss_skip_63:
+	
+	// 60 is Bee
+	cmp #0x0060
+	bne $+InBoss_skip_60
+		sec
+		rtl
+InBoss_skip_60:
+	
+	// 0d is Krow 2
+	cmp #0x000d
+	bne $+InBoss_skip_0d
+		sec
+		rtl
+InBoss_skip_0d:
+		
+		// False
+		clc
+		rtl
+
+		
+ReadMatrix:
+	// Where are we going?
+	// Look up in matrix. First index LevelCode, second ParentEntrance
+	// lda $=index
+	// asl a
+	// tax
+	// lda $=Matrix,x
+	// tax 
+	// Second index stored as * 2
+	// lda ($=2ndIndex),x
+		
+	lda $=LevelCode
+	asl a
+	tax
+	lda $=LevelsLUT,x
+	// Place in x while doubling entrance
+	tax
+	lda $=EarlyParentEntrance
+	asl a
+	sta $=TempEarlyParentEntrance
+	txa
+	clc
+	adc $=TempEarlyParentEntrance
+	tax
+		
+	lda $=Entrances&0xff0000,x
+	
+	// The above yields A holding the parent and entrance
+	// Upper 8 bits are parent, lower 8 bits are entrance
+
+	rtl
+
+	
+Master_death:
+	lda $=DeathFlag
+	// Go to last checkpoint
+	beq $+MasterChangeLevelFunc_skip_death
+		
+		// Check if in boss
+		jsr $=InBoss
+		
+		bcc $+Master_death_skip_boss
+			jmp $=Master_death_boss
+	Master_death_skip_boss:
+	
+		lda $=CheckpointLocation
+		bne $+MasterChangeLevelFunc_skip_nocheckpoint
+			sta $=DeathFlag
+			// Load 1 for halfway, 0 for reg
+			lda #0
+			sta $=ParentEntrance
+			// Load 3 for 1-1
+			lda #3
+			sta $=Parent
+			// If different than LevelCode restart music
+			cmp $=LevelCode
+			beq $+MasterChangeLevelFunc_skip_restart
+				jsr $=RestartMusic
+		MasterChangeLevelFunc_skip_restart:
+
+			jmp $=MasterChangeLevelFunc_FixStack_return
+	MasterChangeLevelFunc_skip_nocheckpoint:
+
+		jsr $=MasterChangeLevelFunc_checkpoint_style
+
+		// If different than LevelCode restart music
+		cmp $=LevelCode
+		beq $+MasterChangeLevelFunc_skip_nocheckpoint_skip_restart
+			jsr $=RestartMusic
+	MasterChangeLevelFunc_skip_nocheckpoint_skip_restart:
+	
+		
+		// Turn off flag
+		lda #0
+		sta $=DeathFlag
+		// Skip rest of function
+		jmp $=MasterChangeLevelFunc_FixStack_return
+	
+	
+MasterChangeLevelFunc_skip_death:	
+	rtl
+
+MasterChangeLevelFunc_checkpoint_style:
+	lda $=RandomizerFlags
+	bit #2
+	beq $+MasterDeath_skip_checkpointstyle
+		lda $=CheckpointLocation
+		// Use twice
+		tax
+		// Bottom 8 bits entrance
+		and #0x00ff
+		sta $=ParentEntrance
+		// Top 8 bits parent
+		txa
+		xba
+		and #0x00ff
+		sta $=Parent
+		rtl
+		
+		
+MasterDeath_skip_checkpointstyle:
+	
+	lda $=CheckpointLocation
+	// Use twice
+	tax
+	and #0x00ff
+	sta $=ParentEntrance
+	txa
+	xba
+	and #0x00ff
+	sta $=Parent
+	
+	rtl
+
+	
+Master_death_boss:
+	// Which boss are we in?
+	lda $=LevelCode
+	tax
+	lda $=BossFlags,x
+	// Did we clear?
+	and $=BossCompletionFlags
+
+	bne $+Master_death_skip_bossClear
+		lda $=LevelCode
+		sta $=Parent
+		lda #0
+		sta $=DeathFlag
+		sta $=ParentEntrance
+		jmp $=MasterChangeLevelFunc_FixStack_return
+Master_death_skip_bossClear:
+	jmp $=Master_death_skip_boss
+	
+MasterChangeLevelFunc_FixStack_return:
+	php
+	pla
+	pla
+	jmp $=MasterChangeLevelFunc_return
+	
+AreWeInKKR:
+	lda $=LevelCode
+	
+	// 61 is kkr
+	cmp #0x0061
+	bne $+AreWeInKKR_skip_61
+		// In kkr
+		// Have we cleared everything?
+		lda $=BossCompletionFlags
+		and #0x001f
+		cmp #0x001f
+		bne $+AreWeInKKR_skip_flags
+			// Did we die here?
+			lda $=DeathFlag
+			beq $+AreWeInKKR_skip_death
+				// Did we meet kkr?
+				lda $=LevelCode
+				sta $=Parent
+				lda #0
+				sta $=DeathFlag
+				sta $=ParentEntrance
+				jsr $=RestartMusic
+				
+				jmp $=MasterChangeLevelFunc_FixStack_return
+			
+		AreWeInKKR_skip_death:
+			jmp $=MasterChangeLevelFunc_return_normal
+	AreWeInKKR_skip_flags:
+		jsr $=AreWeInKKR_restartAtCP
+	
+		ply
+		plx
+		jmp $=MasterChangeLevelFunc_FixStack_return
+AreWeInKKR_skip_61:
+	rtl
+	
+AreWeInKKR_restartAtCP:
+	
+// Do we have a checkpoint?	
+	lda $=CheckpointLocation
+	
+	
+	tax
+	and #0x00ff
+	sta $=ParentEntrance
+	txa
+	xba
+	and #0x00ff
+	sta $=Parent
+	jsr $=RestartMusic
+	rtl
+	
+// Return normal
+MasterChangeLevelFunc_return_normal:
+	//$B8/8075 A9 2D 00    LDA #$002D              A:0002 X:001A Y:01A0 P:envmxdIzc
+	//$B8/8078 20 D6 D7    JSR $D7D6  [$B8:D7D6]   A:002D X:001A Y:01A0 P:envmxdIzc
+	//GoToCredits
+	// Flag kkr as done
+	lda #1
+	sta $=KkrMet
+
+	lda #0x002d
+	pea $0x807a
+	jmp $0xb8d7d6
+
+Master_constants:
+	lda $=Parent
+	xba
+	ora $=ParentEntrance
+	
+	// 0203 is rambi rumble from rambi room
+	cmp #0x0203
+	bne $+Master_constants_skip_0203
+		jmp $=ForceRambi
+Master_constants_skip_0203:
+	
+	// 1702 is web woods from squitter room
+	cmp #0x1702
+	bne $+Master_constants_skip_1702
+		jmp $=ForceSquitter
+Master_constants_skip_1702:
+	
+	// 1703 is web woods from b1
+	cmp #0x1703
+	bne $+Master_constants_skip_1703
+		jmp $=ForceSquitter
+Master_constants_skip_1703:
+	
+	// 1704 is web woods from b2
+	cmp #0x1704
+	bne $+Master_constants_skip_1704
+		jmp $=ForceSquitter
+Master_constants_skip_1704:
+	
+	// 1701 is web woods from halfway
+	cmp #0x1701
+	bne $+Master_constants_skip_1701
+		jmp $=ForceSquitter
+Master_constants_skip_1701:
+	
+	// 6c02 is arctic abyss from b1
+	cmp #0x6c02
+	bne $+Master_constants_skip_6c02
+		jmp $=ForceEnguarde
+Master_constants_skip_6c02:
+	
+	// 8f03 is clapper's cavern from b2
+	cmp #0x8f03
+	bne $+Master_constants_skip_8f03
+		jmp $=ForceEnguarde
+Master_constants_skip_8f03:
+	
+	// 9f00 is animal antics (squawks)
+	cmp #0x9f00
+	bne $+Master_constants_skip_9f00
+		jmp $=ForceSquitter
+Master_constants_skip_9f00:
+	
+	// 9c00 is animal antics (rattly)
+	cmp #0x9c00
+	bne $+Master_constants_skip_9c00
+		jmp $=ForceRattly
+Master_constants_skip_9c00:
+	
+	// 2404 is squawks shaft
+	cmp #0x2404
+	bne $+Master_constants_skip_2404
+		lda $=RandomizerFlags
+		bit #8
+		beq $+Master_constants_skip_easy
+			// Force squawks mount
+			lda #0x0efc
+			sta $_AnimalMount
+			lda #0x0198
+			sta $_IsAnimal
+			rtl
+	Master_constants_skip_easy:
+		rtl
+Master_constants_skip_2404:
+	
+	// 6c01 is arctic abyss from halfway
+	cmp #0x6c01
+	bne $+Master_constants_skip_6c01
+		jmp $=ForceEnguarde
+Master_constants_skip_6c01:
+
+
+	rtl
+	
+ForceSquitter:
+	lda #0x0190
+	sta $=IsAnimal
+	rtl
+	
+ForceRattly:
+	lda #0x0194
+	sta $=IsAnimal
+	rtl
+	
+ForceSquawks:
+	lda #0x0198
+	sta $=IsAnimal
+	rtl
+	
+ForceRambi:
+	lda #0x019c
+	sta $=IsAnimal
+	rtl
+	
+ForceEnguarde:
+	lda #0x01a0
+	sta $=IsAnimal
+	rtl
+
+CheckMusic:
+sta $0x7ffff0
+	// Did we clear level?
+	lda $=StageClearFlag
+
+	beq $+CheckMusic_skip_clear
+		// Are we going to the same place?
+		lda $=Parent
+		cmp $=LevelCode
+		bne $+CheckMusic_skip_same			
+			tax
+			lda $=SongsRandoLUT,x
+			and #0x00ff
+			
+			// TODO Write LUT after finding all the song IDs. 7e051b
+			// Reload song just in case
+			//lda #0x0006
+			// Start song
+			jsr $0xb5800f
+
+	CheckMusic_skip_same:
+	
+CheckMusic_skip_clear:
+
+	lda $=BossClearedFlag
+	
+
+	lda #0
+	sta $=StageClearFlag
+
+	rtl
+	
+HardWritten:
+	jsr $=InBoss
+	
+	bcc $+HardWritten_skip_boss
+		lda #3
+		sta $=Parent
+		lda #0
+		sta $=ParentEntrance
+		jsr $=RestartMusic
+
+		HardWritten_skip_boss:
+	rtl
+
+RestartMusic:
+
+	lda $=Parent
+	tax
+	lda $=SongsRandoLUT,x
+	and #0x00ff
+	// Start song
+	jsr $0xb58132
+	rtl
+
+OverworldToStage:
+sta $0x7fff00
+	lda $=OverworldToStageFlag
+	bne $+OverworldToStage_skip_first
+		lda $=CurrentFile
+		tax
+		// Index our SRAM
+		lda $=BossFlagsAutoSave,x
+
+		
+		lda #1
+		sta $=OverworldToStageFlag
+		
+		ldx #3
+		lda $=SongsRandoLUT,x
+		and #0x00ff
+
+		jsr $0xb58132
+OverworldToStage_skip_first:
+
+	jmp $0xb5800f
+
+	
+CheckSignature:
+	// Signature is 'Rainbow'
+	// Loop backwards
+	ldx #6
+	
+CheckSignature_loop:
+	dex
+	bmi $+CheckSignature_true
+	
+    lda $=SRAMSignature,x
+    cmp $=AutoSaveEntrance,x
+	beq $-CheckSignature_loop
+		clc
+		rtl
+CheckSignature_true:
+	// Set carry because we made it here
+	sec
+	rtl
+
+WriteSignature:
+	// Signature is 'Rainbow'
+	// Loop backwards
+	ldx #6
+	
+WriteSignature_loop:
+	dex
+	bmi $+WriteSignature_exit
+	
+    lda $=SRAMSignature,x
+    sta $=AutoSaveEntrance,x
+	bra $-WriteSignature_loop
+
+WriteSignature_exit:
+
+	rtl
+
+SRAMSignature:
+	.string	"Rainbow"
+
+ClearStoVRAM:
+	ldx #0x1000
+	dex
+	dex
+	lda #0
+ClearStoVRAM_loop:
+	sta $0xb08000,x
+	dex
+	dex
+	bpl $-ClearStoVRAM_loop
+		rtl
+
+ClearSasWRAM:
+	ldx #0x0100
+	dex
+	dex
+	lda #0
+ClearSasWRAM_loop:
+	sta $0xb07000,x
+	dex
+	dex
+	bpl $-ClearSasWRAM_loop
+		rtl
+
+ClearSRAM2:
+	ldx #0x0f00
+	dex
+	dex
+	lda #0
+ClearSRAM2_loop:
+	sta $0xb07100,x
+	dex
+	dex
+	bpl $-ClearSRAM2_loop
+		rtl
+	
+	
+TitleToLevelFunc:
+	// For safe keeping
+	phx
+	phy
+	
+	// TODO: Delete
+	lda #0x001f
+	//sta $=BossCompletionFlags
+
+	lda #0x0300
+	sta $=CheckpointLocation
+
+	SetHUDFlag
+	
+	lda #1
+	sta $=FirstMusic
+
+	// Zero animals/remove animals with each entrance
+	lda #0
+	sta $=AnimalMount
+	sta $=IsAnimal
+	
+	// Index our SRAM variable
+	ldx #7
+	// Have we done this before?
+	jsr $=CheckSignature
+	
+
+	bcc $+TitleToLevelFunc_skip_valid
+		// Index is 7
+		ldx #7
+        // Load from SRAM. Top 8 bits have (parent) level, lower 8 have (parent) entrance
+        lda $=AutoSaveEntrance,x
+		lda #0x0300
+		//sta $=CheckpointLocation
+		lda #0
+        sta $=ParentEntrance
+		lda #3
+        sta $=Parent
+		
+		lda $=TotalLives
+		sta $=NumberOfLives
+
+		// Retain hints
+		lda $=HintsTaken
+		sta $=CrankySelectionsTaken
+		
+		// Retain coins
+		lda $=CurrentCoinsSRAM
+		sta $=CurrentCoinsWRAM
+		
+			
+		lda $=CurrentKongSRAM
+		sta $=CurrentKong
+
+		
+		jmp $=TitleToLevelFunc_continued
+TitleToLevelFunc_skip_valid:
+
+	// Clear our SRAM once
+	jsr $=ClearSRAM2
+
+
+	// We havent loaded before so write signature to SRAM
+	jsr $=WriteSignature
+
+	// Create an array of entrances found
+	ArrayStruct EntrancesFound, 0x0000
+	
+	lda #0
+	sta $=BossFlagsAutoSave
+	sta $=KongNumber
+	sta $=HintsTaken
+	sta $=CurrentCoinsSRAM
+
+	
+
+	// Force 1-1 as checkpoint
+	//lda #0x0300
+	//sta $=CheckpointLocation
+	lda #3
+	sta $=Parent
+	sta $=LevelCode
+	lda #0
+	sta $=ParentEntrance
+	
+	GetSetupCheckpoint
+	sta $=EntrancesFound_Address
+	lda #1
+	sta $=EntrancesFound_Length
+	sta $=TotalEntrances
+	
+
+TitleToLevelFunc_continued:
+
+	// Index our SRAM
+	lda $=CurrentFile
+	tax
+
+	// Is cheat active?
+	lda $=BossCompletionFlags
+	bne $+TitleToLevelFunc_skip_nodebug
+		// If no cheat, load from SRAM
+		lda $=BossFlagsAutoSave,x
+		sta $=BossCompletionFlags
+		bra $+TitleToLevelFunc_return
+TitleToLevelFunc_skip_nodebug:
+	// If debug is active, load in 1-1
+	// Place back in 1-1
+	lda #3
+	sta $=Parent
+	lda #0
+	sta $=ParentEntrance
+
+TitleToLevelFunc_return:
+
+	jsr $=SetRandoFlags
+
+	jsr $=RestartMusic
+
+		
+	// We have to do this else the game will still be paused
+	lda $=MiscFlags
+	and #0xffbf
+	sta $=MiscFlags
+
+	// Do we force 2 kongs?
+	lda $=RandomizerFlags
+	bit #4
+	beq $+TitleToLevelFunc_skip_kongNumber
+		// Flag is set so force 2 kongs on entrance
+		lda $=MiscFlags
+		ora #0x4000
+		sta $=MiscFlags
+TitleToLevelFunc_skip_kongNumber:
+
+	lda $=MiscFlags
+	ora $=KongNumber
+	sta $=MiscFlags
+
+
+	jsr $=Master_constants
+	
+	// Reobtain
+	ply
+	plx
+	jmp $=ReturnFromChild
+
+MasterChangeLevelFunc_kf:
+
+	
+
+	lda #0
+	sta $=KongFamilyDest
+	lda #0
+	sta $=EarlyParentEntrance
+	jmp $=JumpToKongFamily
+
+MasterChangeLevelFunc_Funky:
+
+	lda $=FunkyVisits
+	cmp #1
+	bne $+MasterChangeLevelFunc_Funky_continued
+		lda #3
+		sta $=Parent
+		lda #0
+		sta $=ParentEntrance
+		bra $+MasterChangeLevelFunc_Funky_return
+MasterChangeLevelFunc_Funky_continued:
+	// Go back to checkpoint
+	lda $=CheckpointLocation
+	bne $+MasterChangeLevelFunc_Funky_skip_nocheckpoint
+		// Go to 1-1
+		lda #3
+		sta $=Parent
+		lda #0
+		sta $=ParentEntrance
+		bra $+MasterChangeLevelFunc_Funky_return
+MasterChangeLevelFunc_Funky_skip_nocheckpoint:
+	lda $=CheckpointLocation
+	tax
+	xba
+	and #0x00ff
+	sta $=Parent
+	txa 
+	and #0x00ff
+	sta $=ParentEntrance
+	
+	
+MasterChangeLevelFunc_Funky_return:
+	// Reset our flag
+	lda #0
+	sta $=FunkyFlag
+
+	jsr $=Master_constants
+	
+	jsr $=RestartMusic
+	
+	// Reobtain
+	ply
+	plx
+	jmp $=ReturnFromChild
+	
+GoToOverworld:
+sta $0x7ffffe
+	// Be safe
+	php
+	sta $=Scrap
+	lda $=LevelCode
+	
+	// 61 is kkr
+	cmp #0x0061
+	bne $+GoToOverworld_skip_61
+		// Reget
+		plp
+		lda $=Scrap
+		// Original go to overworld
+		jmp $0x8085b5
+GoToOverworld_skip_61:
+
+	// Top 8 parent, bottom 8 entrance 
+	lda $=CheckpointLocation
+	tax
+	and #0x00ff
+	sta $=ParentEntrance
+	txa
+	xba
+	and #0x00ff
+	sta $=Parent
+		
+	// Reobtain
+	plp
+	
+	// Remove jsl from stack
+	php
+	pla
+	pla
+
+	// Restore A
+	lda $=Scrap
+
+	
+	jmp $=MasterChangeLevelFunc
+	
+
+MasterChangeLevelFunc_Cranky:
+
+	// Bottom 8 are entrance, top 8 are level
+	lda $=CheckpointLocation
+	bne $+MasterChangeLevelFunc_Cranky_skip_nocheckpoint
+		// Checkpoint is 0. Store entrance
+		sta $=ParentEntrance
+		// Load 1-1
+		lda #3
+		sta $=Parent
+		
+		jmp $=MasterChangeLevelFunc_Cranky_return
+MasterChangeLevelFunc_Cranky_skip_nocheckpoint:	
+
+	tax
+	and #0x00ff
+	sta $=ParentEntrance
+	txa
+	xba
+	and #0x00ff
+	sta $=Parent
+	
+MasterChangeLevelFunc_Cranky_return:
+	// Reset our flag
+	lda #0
+	sta $=CrankyFlag
+
+	jsr $=Master_constants
+	
+	jsr $=RestartMusic
+	
+	// Reobtain
+	ply
+	plx
+	jmp $=ReturnFromChild
+	

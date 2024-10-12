@@ -1,0 +1,15 @@
+ScanObjMap:
+sta $0x7ffff4
+	
+	FuncStart
+
+	.precall FindCoins_func
+	call
+	
+	FuncEnd
+
+	// Replaced
+	lda $=LevelCode
+	asl a
+	tay
+	rtl

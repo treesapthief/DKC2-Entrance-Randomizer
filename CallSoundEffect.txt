@@ -1,0 +1,4 @@
+//RenderImage3_16_R:
+//	jsr $0xa22f
+//	rtl
+

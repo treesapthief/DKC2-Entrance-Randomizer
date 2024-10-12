@@ -1,0 +1,32 @@
+GetRandom:
+    lda    $=RNGSeed
+    rol    a
+    rol    a
+    rol    a
+    eor    $_ControllerInput
+    rol    a
+    eor    $=MiscFlags
+    rol    a
+    eor    $=RNGSeed
+    rol    a
+    rol    a
+    eor    $=RNGSeed
+    rol    a
+    rol    a
+    adc    $_ControllerInput
+    adc $0x7e0002
+    adc $0x7e0004
+    adc $0x7e0006
+    adc $0x7e0008
+    adc $0x7e000a
+    adc $0x7e000c
+    adc $0x7e005a
+    adc $=MiscFlags
+    adc $0x7e0002
+    adc $0x7e0028
+    adc $=LevelCode
+    adc $0x7e004c
+    adc $0x7e0d4b
+	adc $=RandomFromEXE
+    sta    $=RNGSeed
+    rtl

@@ -1,0 +1,12 @@
+// All registers free
+EnterBarrel:
+	// Is enemy rando on?
+	lda $=RandomizerFlags
+	bit #1
+	beq $+EnterBarrel_skip_rando
+		lda #0x0050
+		sta $=IFrames
+EnterBarrel_skip_rando:
+	
+	// Replaced
+	jmp $0xb8808e

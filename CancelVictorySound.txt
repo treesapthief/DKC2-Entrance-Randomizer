@@ -1,0 +1,124 @@
+
+CancelLevelVictory:
+
+	lda #1
+	sta $=HasParentFlag
+	sta $=BossClearedFlag
+	
+	// Check which boss we are in
+	lda $=LevelCode
+	
+	// 09 is krow1
+	cmp #0x0009
+	bne $+CancelLevelVictory_skip_09
+		// Index for autosave
+		lda $=CurrentFile
+		tax
+
+		lda $=BossCompletionFlags
+		ora #1
+		sta $=BossCompletionFlags
+		sta $=BossFlagsAutoSave,x
+
+		jmp $=CancelLevelVictory_return
+CancelLevelVictory_skip_09:
+	
+	// 21 is kleever
+	cmp #0x0021
+	bne $+CancelLevelVictory_skip_21
+		// Index for autosave
+		lda $=CurrentFile
+		tax
+
+		lda $=BossCompletionFlags
+		ora #2
+		sta $=BossCompletionFlags
+		sta $=BossFlagsAutoSave,x
+
+		jmp $=CancelLevelVictory_return
+CancelLevelVictory_skip_21:
+	
+	// 63 is kudgel
+	cmp #0x0063
+	bne $+CancelLevelVictory_skip_63
+		// Index for autosave
+		lda $=CurrentFile
+		tax
+
+		lda $=BossCompletionFlags
+		ora #4
+		sta $=BossCompletionFlags
+		sta $=BossFlagsAutoSave,x
+
+		jmp $=CancelLevelVictory_return
+CancelLevelVictory_skip_63:
+	
+	// 60 is bee
+	cmp #0x0060
+	bne $+CancelLevelVictory_skip_60
+		// Index for autosave
+		lda $=CurrentFile
+		tax
+
+		lda #1
+		sta $=HasParentFlag
+		lda $=BossCompletionFlags
+		ora #8
+		sta $=BossCompletionFlags
+		sta $=BossFlagsAutoSave,x
+
+		jmp $=CancelLevelVictory_return
+CancelLevelVictory_skip_60:
+	
+	// 0d is krow2
+	cmp #0x000d
+	bne $+CancelLevelVictory_skip_0d
+		// Index for autosave
+		lda $=CurrentFile
+		tax
+
+		lda $=BossCompletionFlags
+		ora #0x0010
+		sta $=BossCompletionFlags
+		sta $=BossFlagsAutoSave,x
+
+CancelLevelVictory_skip_0d:
+
+CancelLevelVictory_return:
+
+	CountBossesBeat
+	
+	CompareDoneVsRequired
+
+	
+	// Pull 24 bits off stack
+	php
+	pla
+	pla
+	
+	lda #1
+	sta $=HasParentFlag
+	jmp $=BonusLose
+		
+LevelVictory:
+	lda $=RandomizerFlags
+	bit #0x0020
+	beq $+LevelVictory_skip_nomusic
+		lda $=Parent
+		tax
+		lda $=SongsRandoLUT,x
+		and #0x00ff
+		// Start song
+		jsr $0xb58132
+LevelVictory_skip_nomusic:
+
+	lda #1
+	sta $=StageClearFlag
+
+
+LevelVictory_return:
+	// Replaced code
+	ldx #0x00fe
+	// We replaced a jsr, so push 16 bits to stack
+	pea $0x81ee
+	jmp $0xb581fb

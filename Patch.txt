@@ -1,0 +1,223 @@
+
+// ============================================
+// =================PATCHES====================
+// ============================================
+
+// Fires every frame to update our seed
+.addr 0x8089c9
+jsr $=OnControllerInput
+
+// Create sprite
+.addr 0xbb8474
+jmp $=CreateEntity
+
+//$80/A5C9 22 0C 80 B5 JSL $B5800C[$B5:800C]   A:0018 X:0400 Y:0001 P:envmxdIzC
+// Fires on title advance
+.addr 0x80a5c9
+jmp $=TitleToLevelFunc
+
+// Kong number check
+.addr KongNumberCheck
+jsr $=KongNumberCheckFunc
+nop
+nop
+
+// Custom halfway set
+.addr HitHalfway
+jsr $=HitHalfway_func
+nop
+
+// Fall death
+// This address marks a write to 7e0a36, which is only written on fall deaths
+.addr 0xb8839e
+jmp $=FallDeath
+
+
+// Pause out
+.addr 0x808ab3
+jmp $=PauseOut
+
+// Sets sound effects to always play
+.addr 0xb58092
+nop
+nop
+
+// Apply 1 of 2 cheats 
+.addr 0x80b02c
+jsr $=CheatToggledFunc
+nop
+nop
+
+// Jump from  title to in-game (overworld)
+.addr 0x80b421
+//jmp $=StartGame
+
+
+// Master Change Level
+.addr 0xb88075
+jmp $=MasterChangeLevelFunc
+
+// On boss clear
+// Level victory sound
+.addr 0xb88262
+jsr $=CancelLevelVictory
+nop
+nop
+
+// Level victory sound
+.addr 0xb581e9
+jmp $=LevelVictory
+
+
+// Force dk appearence
+.addr 0xb6a4f2
+jsr $=ForceDK
+nop
+nop
+
+// Return from 'call music' func
+.addr 0xb5800f
+jmp $_TransitionB5Music&0xffff
+
+// Cranky selection
+.addr 0xb49da8
+jsr $=SelectionCranky
+nop
+
+// Scan object map
+.addr 0xbbb384
+jsr $=ScanObjMap
+
+// Coin collect
+.addr 0xbeb8b2
+jsr $=CoinGet
+nop
+
+// Set invinc on enter barrel 
+.addr 0xb3eef4
+jsr $=EnterBarrel
+
+.addr 0x80f321
+jsr $=PreOAMWrite
+nop
+
+.addr 0x80f39a
+jsr $=GlobalFrameAdvance
+
+// Copyright write
+.addr 0x80b604
+jsr $=CopyrightWrite
+
+// Title screen dma
+.addr 0x80b5a8
+jsr $=TitleTilemapDMA
+
+// Intro palette load
+.addr 0x80b5b5
+jsr $=IntroPaletteLoad
+
+// ============================================
+// =========BASIC ROM EDITS====================
+// ============================================
+
+// Disable demo
+.addr 0x8087e3
+jsr $=DisableDemo
+
+
+// Disable intro
+.addr 0x80942e
+jsr $=Logo
+
+// Disable write sparkles to OAM
+.addr 0xb5a214
+jsr $=LoadOAM
+rts
+
+// Start select out of any level (including bosses)
+.addr 0xbb8267
+sec
+
+// Disable bonus lose music
+.addr BonusCompletionMusic
+nop
+nop
+nop
+nop
+
+// Allows all (most) water enemies to spawn out of water
+.addr 0xb3b863
+//rts
+
+// Halfway fix
+.addr 0xb3e4d7
+jmp $0xb3e4fe
+
+// Go to overworld
+.addr 0xb5e085
+jsr $=GoToOverworld
+
+// On game load
+.addr 0x85e0
+jsr $=GameLoad
+// On game load
+.addr 0x8085e0
+jsr $=GameLoad
+
+
+// Change SRAM size
+.addr 0x80ffd8
+.data8 0x03
+
+// Restart Credits on wait
+.addr 0xb48ca7
+jsr $=Ending
+
+// Cranky spawning error
+.addr 0xb4ae34
+bmi $0x0a
+tdc
+
+// Credits not visuals
+.addr 0x80f52f
+//nop
+//nop
+//nop
+
+// Disable sounds
+.addr 0xb58088
+//jmp $_EnemySoundEffects
+
+// Custom NMI funcs
+.addr 0x80d1a0
+jmp $=CustomEndingFirst
+jmp $=CustomEndingSecond
+LagFrames_NMI:
+jmp $=LagFrames
+
+.addr 0x808529
+//jsr $=DisableNMI
+//nop
+
+
+//.addr 0x808640
+//lda #0xd1a0
+
+//TESTS
+//.addr 0xbb8d29
+//rtl
+
+//.addr 0x809787
+//nop
+//nop
+//nop
+
+//.addr 0x8087b9
+//nop
+//nop
+//nop
+//nop
+
+.addr 0x80b3c8
+//jmp $0x80B409
+

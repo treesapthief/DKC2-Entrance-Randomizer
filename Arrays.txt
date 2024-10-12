@@ -1,0 +1,156 @@
+// ==================================
+// Array funcs
+// ==================================
+// Does not work when val is 0
+.func Array_Push_func =Array, _ArrayMid, _MaxArrayLength, _Value
+Array_Push_func:
+	.local _Mid
+	// In precall, pass full address of mid in
+	//lda #_MasterLand
+    //sta $.Param_Master
+    //lda #_MasterLand/0x100
+    //sta $.Param_Master+1
+	
+	// Store as 8 bit
+	ldy #1
+	lda [$.ArrayMid],y
+	sta $.Mid
+	
+	// Compare to max size
+	lda $.MaxArrayLength
+	cmp $.Mid
+	bcc $+Array_Push_skip_tooFull
+		// Return false
+		clc
+		return
+Array_Push_skip_tooFull:
+
+	lda $.Mid
+	asl a
+	tay
+	// Store value in array
+	lda $.Value
+	sta [$.Array],y
+	
+    // Increment mid
+    lda $.Mid
+    inc a
+    sta [$.ArrayMid]
+	
+	// Return true
+	sec
+	return
+	
+	
+.func Array_sort_func
+// Sort using bubble sort
+Array_sort_func:
+
+Array_sort_L1:
+    //let arr = [0, 3, 2, 5, 1]
+Array_sort_ L3:
+    //for (let i = 0; i < arr.length - 1; i++) {
+	Array_sort_L4:
+
+		//for (let j = i + 1; j < arr.length; j++) {
+		Array_sort_L5:
+			//if (arr[j] < arr[i]) {
+			Array_sort_L6:
+				//let temp = arr[j]
+				Array_sort_L7:
+				//arr[j] = arr[i]
+				Array_sort_L8:
+				//arr[i] = temp
+			Array_sort_L9:
+			//}
+		Array_sort_L10:
+		//}
+	Array_sort_L11:
+	//}
+
+.func Array_Insert_Sorted_Func =arrBottom, _arrMid, _arrTop, _value
+Array_Insert_Sorted_Func:
+
+Array_Insert_Sorted_L1:
+        //// Is array full?
+        //if (arrMid == arrTop) {
+		lda $.arrMid
+		cmp $.arrTop
+		bcc $+Array_Insert_Sorted_L5
+            //return false
+			clc
+			return
+
+Array_Insert_Sorted_L5:
+        //// Create our local vars
+        //let insert = value, i = 0
+		.local _insert, _i, _ix2
+		lda $.value
+		sta $.insert
+		stz $.i
+
+Array_Insert_Sorted_L8:
+        //// Loop through array
+        //for (; i < arrMid; i++) {
+		// ASM exclusive code
+		lda $.i
+		asl a
+		sta $.ix2
+		tay
+		
+		lda $.i
+		cmp $.arrMid
+		bcs $+Array_Insert_Sorted_L17
+		
+Array_Insert_Sorted_L10:
+            //// If index is > our insert value, swap
+            //if (arrBottom[i/* << 1*/] > insert) {
+			lda ($.arrBottom),y
+			cmp $.insert
+			// Inefficiently swaps when ==, but oh well
+			bcc $+Array_Insert_Sorted_L16
+Array_Insert_Sorted_L12:
+                //let temp = arrBottom[i/* << 1*/]
+				// Do without temp
+				// x = x ^ y
+				lda ($.arrBottom),y
+				eor $.insert
+				sta ($.arrBottom),y
+				
+				// y = x ^ y
+				lda ($.arrBottom),y
+				eor $.insert
+				sta $.insert
+				
+				// x = x ^ y
+				lda ($.arrBottom),y
+				eor $.insert
+				sta ($.arrBottom),y
+Array_Insert_Sorted_L16:
+		// Increment i
+		lda $.i
+		inc a
+		sta $.i
+		cmp $.arrMid
+		bcc $-Array_Insert_Sorted_L8
+
+Array_Insert_Sorted_L17:
+        //// Finally, add to end of array
+        //arrBottom[i] = insert
+		asl a
+		tay
+
+
+		lda $.insert
+		sta ($.arrBottom),y
+		
+		// We added one, so increment mid
+		lda $.arrMid
+		inc a
+		sta $.arrMid
+
+Array_Insert_Sorted_L19:
+        //// Return true if add was successful
+        //return true
+		sec
+		return

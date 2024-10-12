@@ -1,0 +1,31 @@
+// A and X are free, Y is too?
+ShortJumpInvinc:
+
+	// Check which kong we are
+	// Set kong invincible on swap
+	lda $=CurrentKong
+	bit #1
+	bne $+ShortJumpInvinc_skip_dixie
+		lda #0x0070
+		sta $_DixieInvinc
+		lda #0x0060
+		sta $_DixieInvincBlink
+		// Clear the other character
+		stz $_DiddyInvinc
+		stz $_DiddyInvincBlink
+		bra $+ShortJumpInvinc_return
+ShortJumpInvinc_skip_dixie:
+
+	lda #0x0070
+	sta $_DiddyInvinc
+	lda #0x0060
+	sta $_DiddyInvincBlink
+	// Clear the other character
+	stz $_DixieInvinc
+	stz $_DixieInvincBlink
+
+
+ShortJumpInvinc_return:
+	// Replaced
+	lda #2
+	rts

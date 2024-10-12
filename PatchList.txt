@@ -1,0 +1,111 @@
+﻿
+//Game "DONKEY KONG COUNTRY  ", 0x01, 0x00
+Game "DIDDY'S KONG QUEST   ", 0x01, 0x00
+{
+	//DKC1
+//    .fix "disable audio"
+//        [8ab0e8] = 0x6b
+//        [8ab4ff] = 0x60
+//        [8ab1c6] = 0x6b
+//        [8ab1aa] = 0x6b
+
+	// DKC2
+	.cheat "disable audio"
+		[b58213] = 0x60
+		[b5840d] = 0x60
+		[b581fb] = 0x60
+
+
+	.fix "Stuff"
+
+	.fix "Hack"
+		.outfile	"Dkc2test.smc"
+
+		// Var stack
+		.def        VSTACK_PAGE        0x0100
+		.def        VSTACK_START    0x0102
+		.def        VSTACK_TOP        0x017f
+		.vstack        _VSTACK_START
+		.vstacktop    _VSTACK_TOP
+
+		
+		.include	"Variables.txt"
+		.include	"Patch.txt"
+		.mx 0x00
+		.include	"Macros.txt"
+		
+		
+		
+		// My Scripts (addresses)
+		.addr		0xbc7ddc, 0xbc7fff
+		.include	"MyScripts.txt"
+		// My Scripts (scripts)
+		.addr		0xbaff88, 0xbaffff
+		.include	"MyScripts_test.txt"
+		
+		
+		// LUTs         0x2273
+		.addr		0xb8dd8e,0xb8ffff
+		.include	"LUTs.txt"
+		.include	"ShortJumpInvinc.txt"
+		
+		// Required Bosses         0x0479
+		.addr		0xb2fb87,0xb2ffff
+		.include	"RequiredBosses.txt"
+		.include	"Music.txt"
+		
+		// Patches       0x2503
+		.addr		0xbddafe,0xbdffff
+		.include	"CreateEntity.txt"
+		.include	"MasterChangeLevel.txt"
+		.include	"KongNumberCheckFunc.txt"
+		.include	"Halfway.txt"
+		.include	"PauseOut.txt"
+		.include	"GetRandom.txt"
+		.include	"GetRandomRange.txt"
+		.include	"StartGame.txt"
+		.include	"CancelVictorySound.txt"
+		.include	"OnControllerInput.txt"
+		.include	"SelectionCranky.txt"
+		.include	"BossScare.txt"
+		.include	"ScanObjMap.txt"
+		.include	"CoinGet.txt"
+		.include	"EnterBarrel.txt"
+		.include	"Ending.txt"
+		.include	"PreOAMWrite.txt"
+		.include	"DrawImage.txt"
+		.include	"NMIManip.txt"
+		
+		
+
+		.mx 0x00
+		// Functions		0x0eff
+		.addr		0xb4f100, 0xb4ffff
+		.include	"BinarySearch.txt"
+		.include	"GetRandomFromArray.txt"
+		.include	"FindCoins.txt"
+		.include	"PrintToHUD_func.txt"
+		.include	"Arrays.txt"
+		.include	"WriteWordFunc.txt"
+		.include	"DrawLogo.txt"
+		
+		
+		
+		// Rando flags		0x0474
+		.addr		0xbefb9c, 0xbeffff
+		.include	"SetRandoFlags.txt"
+		
+		// transition-b5         0x17a
+		.addr 0xb5fe86, 0xb5ffff
+		.include	"TransitionB5.txt"
+		
+		// Call sound effect        0xad
+		.addr		0xb57f53, 0xb57fff
+		.include	"CallSoundEffect.txt"
+		
+		// Call sound effect        0x1079
+		.addr		0xbaef87, 0xbaffff
+		.include	"BAjsr.txt"
+		
+
+}

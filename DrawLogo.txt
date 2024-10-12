@@ -1,0 +1,189 @@
+.func WriteRow_func _Tile, _Window, _Times, _x, _y
+WriteRow_func:
+
+
+
+	ldy $.Times
+	b_Loop:
+		// Push y for safety
+		phy
+
+		.precall WriteTile_Func _Tile, _Attr, _x, _y
+			lda $.Tile
+			sta $.Param_Tile
+			lda $.Window
+			sta $.Param_Attr
+			lda $.x
+			sta $.Param_x
+			lda $.y
+			sta $.Param_y
+		call
+		
+		
+		// Retrieve y
+		ply
+
+		inc a
+		sta $.Tile
+		inc $.x
+		dey
+		bpl $-b_Loop
+			return
+		
+.func WriteTile_Func _Tile, _Attr, _x, _y
+WriteTile_Func:
+	.local _xProduct, _yProduct, _Params
+	
+	
+
+	// Calculate position every turn
+	// Result in x and y
+	.precall CalculateTile _x, _y
+		lda $.x
+		sta $.Param_x
+		lda $.y
+		sta $.Param_y
+	call
+	
+	// x has x, y has y
+	stx $.xProduct
+	sty $.yProduct
+
+	lda #0
+	clc
+	adc $.xProduct
+	clc
+	adc $.yProduct
+	tax
+	
+	lda $.Tile
+	
+	ora $.Attr
+	sta $=IntroTileMap,x
+	return
+
+.mx 0x00
+.func    TitleHud_func	=Address, _X, _Y
+TitleHud_func:
+	.local	_index
+	stz	$.index
+
+
+	TitleHud_loop:
+		ldy $.index
+		lda [$.Address],y
+		inc	$.index
+		and #0x00ff
+
+		// Did we finish with the string?
+		cmp #0x0000
+		bne $+TitleHud_skip_return
+			return
+	TitleHud_skip_return:
+
+		// Did we hit a space?
+		// 0x20 is space
+		cmp #0x0020
+		bne $+TitleHud_loop_skip_0x20
+			inc $.X
+			bra $-TitleHud_loop
+	TitleHud_loop_skip_0x20:
+
+		// Look up in LUT
+		tax
+		lda $=CustomLetterCharLUT,x
+		and #0x00ff
+		clc
+		adc #0x00c0
+
+		// X pos
+		
+		// Inc 70
+		inx
+		inx
+		inx
+		inx
+		stx $0x0070
+		jmp $=TitleHud_loop
+
+.func WriteCharIntroFunc _charIndex, _x, _y
+WriteCharIntroFunc:
+	.local _xProduct, _yProduct
+	// Result in A
+	.precall CalculateTile _x, _y
+		lda $.x
+		sta $.Param_x
+		lda $.y
+		sta $.Param_y
+	call
+
+	// x has x, y has y
+	stx $.xProduct
+	sty $.yProduct
+		
+
+	lda #0
+	clc
+	adc $.xProduct
+	clc
+	adc $.yProduct
+	// Store index in y
+	tay
+	
+	// Select tile based on letter
+	lda $.charIndex
+	tax
+	// Only care about lower 8 
+	lda $=CustomLetterCharLUT,x
+	and #0x00ff
+	
+	// Set palette and priority
+	ora #0x3f00
+	
+	false 
+	{
+		BG Map (32x32 entries)
+			Each BG Map Entry consists of a 16bit value as such:
+			  Bit 0-9   - Character Number (000h-3FFh)
+			  Bit 10-12 - Palette Number   (0-7)
+			  Bit 13    - BG Priority      (0=Lower, 1=Higher)
+			  Bit 14    - X-Flip           (0=Normal, 1=Mirror horizontally)
+			  Bit 15    - Y-Flip           (0=Normal, 1=Mirror vertically)
+	}
+	// Store in map
+	tyx
+	sta $=IntroTileMap,x
+
+	return
+	
+.func WriteStringIntroFunc =Address, _x, _y
+WriteStringIntroFunc:
+	// i is index
+	.local _i
+	stz $.i
+	
+	b_Loop:
+		// Index our string
+		ldy $.i
+		lda [$.Address],y
+		and #0x00ff
+		// Are we == to 0?
+		beq $+b_endLoop
+			// Are we on space?
+			cmp #0x0020
+			bne $+b_skip_space
+				inc $.i
+				inc $.x
+				bra $-b_Loop
+		b_skip_space:
+			
+			ldx $.x
+			ldy $.y
+			
+			WriteCharIntro
+			inc $.i
+			inc $.x
+			bra $-b_Loop
+	b_endLoop:
+	
+	return

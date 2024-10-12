@@ -1,0 +1,27 @@
+.mx 0x00
+.func    CustomHUD_func	_tile, _position, _attribute
+CustomHUD_func:
+	ldx $0x0070
+	cpx	#0x0400
+	bcc	$+CustomHUD_enoughSpace
+		return
+
+CustomHUD_enoughSpace:	
+	lda $.attribute
+	ora $.tile
+	sta $0x0002,x
+
+	// X+Y pos
+	lda $.position
+	sta $0x0000,x
+
+	
+	// Inc 70 4 times
+	inx
+	inx
+	inx
+	inx
+	stx $0x0070
+	return
+	
+

@@ -1,0 +1,174 @@
+	.def	Null					0x00
+	.def	Ram_Rtl					0x7e0100
+	
+
+
+	//In-game
+	.def	AnimalMount					0x7e006c
+	.def	IsAnimal					0x7e006e
+	.def	LevelCode					0x7e00d3
+	.def	LevelGoingToCode			0x7e08c8
+	.def	MiscFlags					0x7e08c2
+	.def	HasParentFlag				0x7e0515
+	.def	EarlyParentEntrance			0x7e059f
+	.def	Parent						0x7e05a3
+	.def	ParentEntrance				0x7e05a5
+	.def	CurrentFile					0x7e0611
+	.def	GameCheckpoint				0x7e08aa
+	.def	ControllerInput				0x804218
+	.def	CrankyTimer					0x7e064e
+	.def	KongFamilyDest				0x7e0689
+	.def	CurrentWorld				0x7e06b1
+	.def	CrankySelectionsTaken		0x7e08d2
+	.def	FunkyVisits					0x7e08e7
+	.def	DiddyInvinc					0x7e16c8
+	.def	DiddyInvincBlink			0x7e16c6
+	.def	DixieInvinc					0x7e16ee
+	.def	DixieInvincBlink			0x7e16ec
+	.def	CurrentKong					0x7e08a4
+	.def	DiddyState					0x7e0e10
+	.def	DixieState					0x7e0e6e
+	.def	CurrentCoinsWRAM			0x7e08ca
+	.def	NumberOfLives				0x7e08be
+	.def	GameMode					0x7e060d
+	.def	CollectedArray				0x7e7a12
+	
+	
+	// VRAM
+	.def	VRAMADDRESS					0x6c00
+	//.def	VRAMADDRESS					0xd800
+	
+	
+	// PC addresses
+	// jsr/rtl
+	.def	ClearWRAM					0x808e3b
+	.def	ClearVRAM					0x8085b5
+	.def	JumpToKongFamily			0xb48b07
+	.def	CallSoundEffectVar			0xb581fb
+	.def	ReturnFromChild				0xbbbfe1
+	.def	FinishLevel					0xbbbf55
+	.def	MasterChangeLevel			0xbbbf0f
+	.def	BonusCompletionMusic		0xb88c28
+	.def	BonusLose					0xb88c1c
+	.def	KongNumberCheck				0xb88cc2
+	//.def	KongNumberCheck				0xb88c53
+	.def	HitHalfway					0xb3e4d2
+	.def	PlaySoundEffect				0xb580c9
+	.def	EntityArray					0xfbe800
+	.def	EndingCredits				0x8087b9
+	.def	DiddyScream					0xd3751c
+	.def	DixieScream					0xd35b3c
+	.def	DonkeyTied					0xdd9422
+	.def	DonkeyRopeKnot				0xddbde0
+	.def	DonkeyRope					0xddc26c
+	.def	RenderImage3_16_R			0xb5a22f
+	.def	RenderImageDixie_3_16_L		0xb5a3ce
+	.def	RenderImageDonkey_5_16_L	0xb5a3ce
+	
+	
+
+	// Custom variables
+	// Save to SRAM
+	.def	BossFlagsAutoSave			0xb07f00
+	.def	NumberOfBossesAuto			0xb07f02
+	.def	AutoSaveEntrance			0xb07f04
+	.def	KongNumber					0xb07f10
+	.def	HintsTaken					0xb07f12
+	.def	DeathNumber					0xb07f14
+	.def	TotalEntrances				0xb07f16
+	.def	Deaths						0xb07f18
+	.def	CurrentCoinsSRAM			0xb07f1a
+	.def	TotalTimeFrames				0xb07f1c
+	.def	TotalTimeSeconds			0xb07f1e
+	.def	TotalTimeMinutes			0xb07f20
+	.def	TotalTimeHours				0xb07f22
+	.def	TotalLives					0xb07f24
+	.def	RNGSeed						0xb07f26
+	.def	CurrentKongSRAM				0xb07f28
+	
+	.def	CollectedFlag				0xb07102
+
+	// Use as WRAM
+	.def	DeathFlag					0xb07000
+	.def	StageClearFlag				0xb07004
+	.def	CheatActive					0xb07008
+	.def	BossCompletionFlags			0xb0700a
+	.def	Mode						0xb0700c
+	.def	TempLevelCode				0xb0700e
+	.def	TempEarlyParentEntrance		0xb07010
+	.def	BossClearedFlag				0xb07012
+	.def	OverworldToStageFlag		0xb07014
+	.def	NumberOfBossesClear			0xb07016
+	.def	FirstPlay					0xb07018
+	.def	FunkyFlag					0xb0701a
+	// Bit 0 is enemies, bit 1 is checkpoint, bit 2 is 2 kong force, bit 3 is logic, bit 4 is price
+	.def	RandomizerFlags				0xb0701c
+	.def	FirstMusic					0xb0701e
+	.def	CheatTimer					0xb07020
+	.def	CrankyFlag					0xb07022
+	.def	BossDefeatFlag				0xb07024
+	.def	Scrap						0xb07026
+	.def	KkrMet						0xb07028
+	.def	IFrames						0xb0702a
+	.def	BeatBoss					0xb0702c	
+	.def	CheckpointLocation			0xb0702e
+	.def	CustomTextTimer				0xb07030
+	.def	SoundEffects				0xb07032
+	.def	CoinIndexes					0xb07034
+	
+	.def	EndingTimer					0xb07050
+	.def	TitleVisited				0xb07052
+	.def	RandomFromEXE				0xb07054
+	.def	BlinkingTimer				0xb07056
+	
+	
+
+
+	// ----------------------------------------------------------------------------
+	// Free space for intro
+	
+	// 32 bytes palette
+	.def	IntroPalette				0x7ff000
+	// Use on logo and copywrite
+	.def	IntroTilemap				0x7fe000
+	
+	
+	// ------------------------------------------------------------------------
+	// Free space for ending
+	
+	// 32 bytes palette
+	.def	CreditPalette				0x7ff000
+	// 0x800 bytes
+	.def	CreditTileMap				0x7fe000
+	
+	// Strings
+	.def	TotalTimeStringSeconds		0x7fd100
+	.def	TotalTimeStringMinutes		0x7fd110
+	.def	TotalTimeStringHours		0x7fd120
+	.def	TotalTimeString				0x7fd130
+	.def	TotalTimeString				0x7fd140
+	.def	TotalUniqueEntrancesString	0x7fd200
+	.def	TotalEntrancesString		0x7fd300
+	.def	TotalLivesObtained			0x7fd400
+	.def	TotalDeathsString			0x7fd500
+	
+	
+	
+	
+	
+
+	
+	
+		
+	
+	
+	
+	
+	
+
+	// Var stack
+	.def        VSTACK_PAGE        0x0100
+	.def        VSTACK_START    0x0102
+	.def        VSTACK_TOP        0x017f
+	.vstack        _VSTACK_START
+	.vstacktop    _VSTACK_TOP

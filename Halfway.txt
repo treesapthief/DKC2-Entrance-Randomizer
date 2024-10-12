@@ -1,0 +1,8 @@
+.mx 0x00
+HitHalfway_func:
+	lda $=LevelCode
+	xba
+	ora #1
+	sta $=CheckpointLocation
+	rtl
+	

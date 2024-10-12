@@ -1,0 +1,33 @@
+// LUT size
+.func	GetRandomFromArray_func	=LUT, _size
+GetRandomFromArray_func:
+GetRandomFromArray_L0:
+// private int GetRandom(byte[] array)
+
+GetRandomFromArray_L2:
+    // Get size of LUT
+    //int x = array.Length;
+	// Already set
+	
+GetRandomFromArray_L5:
+    //Get random number
+    //int rand = /*new Random().Next(0, x);*/ 3;
+	lda $.size
+	jsr $=GetRandomRange
+	
+GetRandomFromArray_L8:
+    // Only care about even indexes
+    //rand &= 0xfffe;
+	and #0xfffe
+	tay
+		
+GetRandomFromArray_L11:
+    // Read at the index (SNES does Read16 natively)
+    //int toReturn = Read16(rand, array);
+	lda [$.LUT],y
+	// Return random in y
+	tay
+
+GetRandomFromArray_L14:
+    //return toReturn;
+	return

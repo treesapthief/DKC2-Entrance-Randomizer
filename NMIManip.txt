@@ -1,0 +1,27 @@
+.mx 0x30
+DisableNMI:
+	// Put in 16 bit mode
+	.mx 0x00
+	rep #0x30
+	// Set NMI pointer
+	lda #_LagFrames_NMI
+	sta $0x20
+	
+	// Ensure 8 bit mode
+	.mx 0x30
+	sep #0x30
+	// Replaced
+	lda #0x81
+	sta $0x4200
+	lda #0xff
+	rtl
+	
+LagFrames:
+	jsr $=MyTime
+	rmx #0x00
+	//.mx 0x00
+	lda #_LagFrames_NMI
+	sta $0x20
+	smx #0x30
+LagFrames_Loop:
+	bra $-LagFrames_Loop

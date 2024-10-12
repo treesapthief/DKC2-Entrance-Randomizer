@@ -1,0 +1,4 @@
+BAjsr:
+	jsr $0xb5a4
+
+	rtl

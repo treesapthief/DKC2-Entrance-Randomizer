@@ -1,0 +1,71 @@
+																																	 
+Slant
+
+   ______              ___ __      
+  / ____/_______  ____/ (_) /______
+ / /   / ___/ _ \/ __  / / __/ ___/
+/ /___/ /  /  __/ /_/ / / /_(__  ) 
+\____/_/   \___/\__,_/_/\__/____/  
+                                   
+
+This is in no particular order.
+Thank you:
+
+V0oid - For being one of the main influences on this and providing me a list of every enemy to be in the randomizer pool.
+
+Pichi - For playtesting this and consult.
+
+Fathlo - For playtesting this and consult.
+
+Sch1ey - For playtesting this and creating a tracker for this.
+
+Lumophile - For ideas and consult.
+
+Emptysys - For teaching me colors and consult.
+
+DustPan - For playtesting and being patient with bugs.
+
+Jermro - For being the first ever to complete a run of this.
+
+Tompa - For being Tompa (a positive, nice, patient person who always supports me and is great to be around).
+
+Zera - For letting me use their name for Cranky hints.
+
+DLB - For letting me use their name for Cranky hints.
+
+SilentWolf - For letting me use their name for Cranky hints.
+
+Otakuroi - For playtesting.
+
+SuperStarNuggets - For playtesting.
+
+OronJoker - For inspiring me to add 2p team to this.
+
+Supreme - For playtesting this.
+
+DNA - For playtesting this.
+
+Bluebeary - For playtesting this.
+
+The DKC Science discord - For helping me with ram.
+
+The DKC_Hacks discord - For playtesting this.
+
+
+
+   _____                 _       __   ________                __       
+  / ___/____  ___  _____(_)___ _/ /  /_  __/ /_  ____ _____  / /_______
+  \__ \/ __ \/ _ \/ ___/ / __ `/ /    / / / __ \/ __ `/ __ \/ //_/ ___/
+ ___/ / /_/ /  __/ /__/ / /_/ / /    / / / / / / /_/ / / / / ,< (__  ) 
+/____/ .___/\___/\___/_/\__,_/_/    /_/ /_/ /_/\__,_/_/ /_/_/|_/____/  
+    /_/                                                                
+
+Snakpak
+Seriously helped me with editing how Kongs look in the longrun. Put in a serious amount of work. Also very serious.
+Has been a great support through it all.
+
+P4plus2
+Extremely knowledgeable about DKC2. I couldn't have done this without him! 
+
+Myself086
+I don't know where to start. None of this would be possible without him, the use of his assembler, emu, and C# skills he passed on along the way. Honestly, his name should be on this, not mine.

@@ -1,0 +1,238 @@
+
+
+GlobalFrameAdvance:
+	// To be safe
+	phx
+	phy
+
+	// Have we done this before?
+	jsr $=CheckSignature
+	bcc $+b_first
+		jsr $=MyTime
+b_first:
+	
+	// Return original and restore registers
+	lda $0x2c
+	ply
+	plx
+	rtl
+
+MyTime:
+	lda $=TotalTimeFrames
+	// Increase frames
+	inc a
+	sta $=TotalTimeFrames
+	
+	// Check others to increment
+	TimeMaxOut TotalTimeFrames, TotalTimeSeconds, 60
+	TimeMaxOut TotalTimeSeconds, TotalTimeMinutes, 60
+	TimeMaxOut TotalTimeMinutes, TotalTimeHours, 60
+	rtl
+
+
+// A returns controller input
+// X is free, Y is unknown
+OnControllerInput:
+
+	// Load input
+	lda $=ControllerInput
+	// Transfer so we don't load again later
+	tax
+	// Push to stack for later
+	pha
+		
+	lda $=MiscFlags
+
+	// 40 is paused
+	bit #0x0040
+	beq $+OnControllerInput_skip_paused
+		jsr $=OnControllerInput_pause
+	
+OnControllerInput_skip_paused:
+	
+	// Generate seed every frame
+	jsr $=GetRandom
+	adc $=RNGSeed
+	sta $=RNGSeed
+	
+	// Is IFrames set?
+	lda $=IFrames
+	beq $+OnControllerInput_skip_IFrames
+		// Check current kong
+		lda $=CurrentKong
+		bne $+b_skip_diddy
+			// Set
+			lda $=IFrames
+			sta $_DiddyInvinc
+			sta $_DiddyInvincBlink
+			bra $+b_finishInvince
+	b_skip_diddy:
+		// Set invinc
+		lda $=IFrames
+		sta $_DixieInvinc
+		sta $_DixieInvincBlink
+	b_finishInvince:
+		// Decrement so it will end
+		dec a
+		sta $=IFrames
+		
+		// Remove ability to swap
+		pla
+		and #0xdfff
+		pha
+		
+
+OnControllerInput_skip_IFrames:
+
+	// Is enemy rando turned on?
+	lda $=RandomizerFlags
+	bit #1
+	beq $+OnControllerInput_skip_Dixie
+		// Are we in a barrel?
+		// Check Diddy
+		lda $=DiddyState
+		// 11 is in barrel
+		cmp #0x0011
+		bne $+OnControllerInput_skip_Diddy
+			lda #2
+			sta $=DiddyInvinc
+			
+	OnControllerInput_skip_Diddy:
+
+		// Check Dixie
+		lda $=DixieState
+		// 11 is in barrel
+		cmp #0x0011
+		bne $+OnControllerInput_skip_Dixie
+			lda #2
+			sta $=DixieInvinc
+			bra $+OnControllerInput_return
+	OnControllerInput_skip_Dixie:
+
+	
+OnControllerInput_return:
+	// Restore A
+	pla
+	// Replaced + return
+	tax
+	rtl
+	
+OnControllerInput_pause:
+	// Are we in a boss?
+	jsr $=InBoss
+	bcc $+OnControllerInput_pause_skip_boss
+		rtl
+OnControllerInput_pause_skip_boss:
+
+	// Transfer to compare
+	txa
+	
+	// Is r pressed?
+	and #0x0010
+	cmp #0x0010
+	bne $+OnControllerInput_pause_skip_r
+		jmp $=OnControllerInput_pause_r
+OnControllerInput_pause_skip_r:
+
+	// Is l pressed?
+	txa
+	and #0x0020
+	cmp #0x0020
+	bne $+OnControllerInput_pause_skip_l
+		lda $=LevelCode
+		// 61 is kkr
+		cmp #0x0061
+		bne $+OnControllerInput_pause_skip_l_skip_61
+			rtl
+	OnControllerInput_pause_skip_l_skip_61:
+		// Set our Cranky flag
+		lda #1
+		sta $=CrankyFlag
+		// Set world
+		sta $=CurrentWorld
+		
+		// Go to Cranky
+		lda #0
+		sta $=KongFamilyDest
+
+		// We have to do this else the game will still be paused
+		lda $=MiscFlags
+		and #0xffbf
+		sta $=MiscFlags
+		
+		// Clear animals on Cranky
+		// Zero animals/remove animals with each entrance
+		lda #0
+		sta $=AnimalMount
+		sta $=IsAnimal
+
+		//jmp $=EndingCredits
+		jmp $=JumpToKongFamily
+
+OnControllerInput_pause_skip_l:
+
+	rtl
+	
+OnControllerInput_pause_r:
+	lda $=LevelCode
+	// 61 is kkr
+	cmp #0x0061
+	bne $+OnControllerInput_pause_r_skip_61
+		rtl
+OnControllerInput_pause_r_skip_61:
+	// Set our Funky flag
+	lda #1
+	sta $=FunkyFlag
+	// Set world
+	sta $=CurrentWorld
+	
+	// Go to Funky
+	lda #2
+	sta $=KongFamilyDest
+	
+	// Force Funky to charge every time
+	lda #0
+	sta $=FunkyVisits
+	
+	// We have to do this else the game will still be paused
+	lda $=MiscFlags
+	and #0xffbf
+	sta $=MiscFlags
+	
+	// Clear animals on funky 	
+	// Zero animals/remove animals with each entrance
+	lda #0
+	sta $=AnimalMount
+	sta $=IsAnimal
+	
+	//jmp $=EndingCredits
+		
+	
+	//GoToCredits
+
+	jmp $=JumpToKongFamily
+
+	
+OnControllerInput_restrictions:
+
+	// Carry set = true
+	lda $=IsAnimal
+	beq $+OnControllerInput_restrictions_skip_animal
+		sec
+		rtl
+OnControllerInput_restrictions_skip_animal:
+
+	lda $=AnimalMount
+	beq $+OnControllerInput_restrictions_skip_mount
+		sec
+		rtl
+OnControllerInput_restrictions_skip_mount:
+
+	// Are we in k rool?
+	lda $=LevelCode
+	// 61 is kkr
+	cmp #0x0061
+	bne $+OnControllerInput_restrictions_skip_kkr
+		sec
+		rtl
+OnControllerInput_restrictions_skip_kkr:

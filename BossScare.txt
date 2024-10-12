@@ -1,0 +1,35 @@
+BossScare:
+	lda $=LevelCode
+	
+	// 61 is kkr
+	cmp #0x0061
+	bne $+BossScare_normal
+		// Do we have enough bosses?
+		lda $=BossCompletionFlags
+		cmp #0x001f
+		beq $+BossScare_normal
+			lda #1
+			
+BossScare_normal:
+
+	rtl
+
+// X and Y are reserved
+BossOpen:
+	lda $=LevelCode
+	
+	//61 is kkr
+	cmp #0x0061
+	bne $+BossOpen_skip_kkr
+		lda $=BossCompletionFlags
+		cmp #0x001f
+		beq $+BossOpen_skip_kkr
+			pla
+			lda #1
+			jmp $0xbbc422
+BossOpen_skip_kkr:
+
+	// Return normal
+	lda #0x0074
+	stz $0x26,x
+	jmp $0xbbc439

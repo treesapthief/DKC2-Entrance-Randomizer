@@ -1,0 +1,505 @@
+// A/X free
+// Y return entity to spawn
+CreateEntity:
+	// 3128 neek
+
+    // Change bank to bb (original)
+    phb
+    pea $0xff00
+	// Save flags and X
+	php
+	phx
+	
+	EntityTo_c486 0xc422
+	EntityTo_c486 0xc47c
+	
+	
+	// Things we want to remove
+	jsr $=GlobalRemoveEntity
+
+	// Are we skipping whole thing?
+	lda $=LevelCode
+	// 6e is toxic tower
+	cmp #0x006e
+	beq $+CreateEntity_skip_6e
+	
+		jsr $=CheckBossFlags
+
+		FuncStartKeepA
+
+		jsr $=RegularRando
+
+		FuncEnd
+CreateEntity_skip_6e:
+
+	// Restore X, then flags
+	plx
+	plp
+
+CreateEntity_return:
+	// Jump back to CreateEntity
+    jmp    $0xbb8478
+
+RegularRando:
+	lda $=RandomizerFlags
+	bit #1
+	bne $+RegularRando_continue
+		rtl
+RegularRando_continue:
+	
+	// Put in restrictions
+	jsr $=DoWeRestrict
+	
+	bcs $+RegularRando_skip_rando
+		// Randomize each separately
+		jsr $=RegularRando_land
+		jsr $=RegularRando_water
+RegularRando_skip_rando:
+	rtl
+
+RegularRando_land:
+	// Search for match
+	RegularBinarySearchLand
+
+	// Result in carry
+	bcc $+RegularRando_land_skip_found
+		// EnemySelectMinusFall
+		jsr $=DoWeSpawnAlternate
+		
+		bcc $+RegularRando_land_skip_noFall
+			EnemySelectMinusFall
+			tyx
+			ReadEntityArray
+			rtl
+	RegularRando_land_skip_noFall:
+		EnemySelectLand
+		tyx
+		ReadEntityArray
+		rtl
+
+RegularRando_land_skip_found:
+	// Nothing was found
+	rtl
+
+DoWeSpawnAlternate:
+
+    lda    $=LevelCode
+    asl    a
+    tax
+    jmp    ($_SmallerLUT_Switch,x)
+SmallerLUT_SwitchEnd:
+    // Return 0 in EntityLandSelect if nothing
+	clc
+    rtl
+
+SmallerLUT_Switch:
+    switch    0x100, SmallerLUT_SwitchEnd, SmallerLUT_SwitchEnd
+		// bramble scramble
+        case    0x2e
+            sec
+			rtl
+		// bramble blast
+        case    0x2d
+            sec
+			rtl
+		// pcp
+        case    0x13
+            sec
+			rtl
+		// windy well
+        case    0x23
+            sec
+			rtl
+		// squawk's shaft
+        case    0x24
+            sec
+			rtl
+		// castle crush
+        case    0x62
+            sec
+			rtl
+		// screech's
+        case    0x2f
+            sec
+			rtl
+		// animal antics - squawks
+        case    0x9f
+            sec
+			rtl
+		// clc
+        case    0x6d
+            sec
+			rtl
+		// blackice
+        case    0x96
+            sec
+			rtl
+	
+RegularRando_water:
+	// Search for match
+	RegularBinarySearchWater
+
+	// Result in carry
+	bcc $+RegularRando_water_skip_found
+		EnemySelectAll
+		tyx
+		ReadEntityArray
+		rtl
+
+RegularRando_water_skip_found:
+	// Nothing was found
+	rtl
+
+// Bit 0 is Krow1, bit 1 is Kleever, 2 is Kudgel, 3 is bee, and 4 is Krow2
+// CheckBossFlags
+CheckBossFlags:
+	lda $=LevelCode
+	
+	// 9 is krow 1
+	cmp #9
+	bne $+CheckBossFlags_skip_9
+		jmp $=CreateEntity_Krow1
+CheckBossFlags_skip_9:
+	
+	// 21 is kleever
+	cmp #0x0021
+	bne $+CheckBossFlags_skip_21
+		jmp $=CreateEntity_Kleever
+CheckBossFlags_skip_21:
+	
+	// 63 is kudgel
+	cmp #0x0063
+	bne $+CheckBossFlags_skip_63
+		jmp $=CreateEntity_Kudgel
+CheckBossFlags_skip_63:
+	
+	// 60 is bee
+	cmp #0x0060
+	bne $+CheckBossFlags_skip_60
+		jmp $=CreateEntity_Bee
+CheckBossFlags_skip_60:
+	
+	// d is krow 2
+	cmp #0x000d
+	bne $+CheckBossFlags_skip_d
+		jmp $=CreateEntity_Krow2
+CheckBossFlags_skip_d:
+	
+	// 61 is kkr
+	cmp #0x0061
+	bne $+CheckBossFlags_skip_61
+		jmp $=CreateEntity_Kkr
+CheckBossFlags_skip_61:
+
+	rtl
+	
+CreateEntity_Kkr:
+	tya
+
+	// 2a34 is kkr
+	cmp #0x2a34
+	bne $+CreateEntity_Kkr_skip_2a34
+
+		// Check flags
+		lda $=BossCompletionFlags
+		and #0x001f
+		cmp #0x001f
+		bne $+CreateEntity_Kkr_skip_spawnKKR
+			rtl
+	CreateEntity_Kkr_skip_spawnKKR:
+
+		ldy #0x2a90
+		rtl
+CreateEntity_Kkr_skip_2a34:
+
+	// 373a is barrel in kkr
+	cmp #0x373a
+	bne $+CreateEntity_Kkr_skip_373a
+		lda $=BossCompletionFlags
+		and #0x001f
+		cmp #0x001f
+		bne $+CreateEntity_Kkr_skip_373a_notcleared
+			RtlCreateEntity
+			// Not cleared so load invis life
+			ldy #0xab8e
+	CreateEntity_Kkr_skip_373a_notcleared:
+		rtl
+CreateEntity_Kkr_skip_373a:
+
+	rtl
+
+CreateEntity_Krow1:
+	tya
+	
+	// cd32 is krow 1
+	cmp #0xcd32
+	bne $+CreateEntity_Krow1_skip_cd32
+		lda $=BossCompletionFlags
+		and #1
+		cmp #1
+		bne $+CreateEntity_Krow1_skip_cd32_cleared
+			// Set Flag
+			lda #1
+			sta $=BossClearedFlag
+			// Supposed to be dk
+			ldy #0x2a90
+	CreateEntity_Krow1_skip_cd32_cleared:
+		rtl
+CreateEntity_Krow1_skip_cd32:
+
+	// 373a is barrel in krow 1
+	cmp #0x373a
+	bne $+CreateEntity_Krow1_skip_373a
+		lda $=BossCompletionFlags
+		and #1
+		cmp #1
+		beq $+CreateEntity_Krow1_skip_373a_notcleared
+			RtlCreateEntity
+			// Not cleared so load banana coin
+			ldy #0x96c2
+	CreateEntity_Krow1_skip_373a_notcleared:
+		rtl
+CreateEntity_Krow1_skip_373a:
+
+	rtl
+
+CreateEntity_Kleever:
+	tya
+	
+	// 2ad6 is Kleever
+	cmp #0x2ad6
+	bne $+CreateEntity_Kleever_skip_2ad6
+		lda $=BossCompletionFlags
+		and #2
+		cmp #2
+		bne $+CreateEntity_Kleever_skip_2ad6_cleared
+			// Set Flag
+			lda #1
+			sta $=BossClearedFlag
+			// Supposed to be dk
+			ldy #0x2a90
+	CreateEntity_Kleever_skip_2ad6_cleared:
+		rtl
+CreateEntity_Kleever_skip_2ad6:
+
+	// 373a is barrel in kleever
+	cmp #0x373a
+	bne $+CreateEntity_Kleever_skip_373a
+		lda $=BossCompletionFlags
+		and #2
+		cmp #2
+		beq $+CreateEntity_Kleever_skip_373a_notcleared
+			RtlCreateEntity
+			// Not cleared so load banana coin
+			ldy #0x96c2
+	CreateEntity_Kleever_skip_373a_notcleared:
+		rtl
+CreateEntity_Kleever_skip_373a:
+
+	rtl
+
+CreateEntity_Kudgel:
+	tya
+	
+	// 2a62 is Kudgel
+	cmp #0x2a62
+	bne $+CreateEntity_Kudgel_skip_2a62
+		lda $=BossCompletionFlags
+		and #4
+		cmp #4
+		bne $+CreateEntity_Kudgel_skip_2a62_cleared
+			// Set Flag
+			lda #1
+			sta $=BossClearedFlag
+			// Supposed to be dk
+			ldy #0x2a90
+	CreateEntity_Kudgel_skip_2a62_cleared:
+		rtl
+CreateEntity_Kudgel_skip_2a62:
+
+	// 373a is barrel in kudgel
+	cmp #0x373a
+	bne $+CreateEntity_Kudgel_skip_373a
+		lda $=BossCompletionFlags
+		and #4
+		cmp #4
+		beq $+CreateEntity_Kudgel_skip_373a_notcleared
+			RtlCreateEntity
+			// Not cleared so load banana coin
+			ldy #0x96c2
+	CreateEntity_Kudgel_skip_373a_notcleared:
+		rtl
+CreateEntity_Kudgel_skip_373a:
+
+	rtl
+
+CreateEntity_Bee:
+	tya
+	
+	// cd92 is Bee
+	cmp #0xcd92
+	bne $+CreateEntity_Bee_skip_cd92
+		lda $=BossCompletionFlags
+		and #8
+		cmp #8
+		bne $+CreateEntity_Bee_skip_cd92_cleared
+			// Set Flag
+			lda #1
+			sta $=BossClearedFlag
+			// Supposed to be dk
+			ldy #0x2a90
+	CreateEntity_Bee_skip_cd92_cleared:
+		rtl
+CreateEntity_Bee_skip_cd92:
+
+	// 373a is barrel in bee
+	cmp #0x373a
+	bne $+CreateEntity_Bee_skip_373a
+		lda $=BossCompletionFlags
+		and #8
+		cmp #8
+		beq $+CreateEntity_Bee_skip_373a_notcleared
+			RtlCreateEntity
+			// Not cleared so load banana coin
+			ldy #0x96c2
+	CreateEntity_Bee_skip_373a_notcleared:
+		rtl
+CreateEntity_Bee_skip_373a:
+
+	rtl
+
+CreateEntity_Krow2:
+	tya
+	
+	// cd64 is Krow2
+	cmp #0xcd64
+	bne $+CreateEntity_Krow2_skip_cd64
+		lda $=BossCompletionFlags
+		and #0x0010
+		cmp #0x0010
+		bne $+CreateEntity_Krow2_skip_cd64_cleared
+			// Set Flag
+			lda #1
+			sta $=BossClearedFlag
+			// Supposed to be dk
+			ldy #0x2a90
+	CreateEntity_Krow2_skip_cd64_cleared:
+		rtl
+CreateEntity_Krow2_skip_cd64:
+
+	// 373a is barrel in krow2
+	cmp #0x373a
+	bne $+CreateEntity_Krow2_skip_373a
+		lda $=BossCompletionFlags
+		and #0x0010
+		cmp #0x0010
+		beq $+CreateEntity_Krow2_skip_373a_notcleared
+			RtlCreateEntity
+			// Not cleared so load banana coin
+			ldy #0x96c2
+	CreateEntity_Krow2_skip_373a_notcleared:
+		rtl
+CreateEntity_Krow2_skip_373a:
+
+	rtl
+
+
+// Return true if we skip
+DoWeRestrict:
+
+    lda    $=LevelCode
+    asl    a
+    tax
+    jmp    ($_RestrictThisEntity_Switch,x)
+RestrictThisEntity_SwitchEnd:
+    // Return false when breaking from switch
+    clc
+    rtl
+	
+RestrictThisEntity_Switch:
+    switch    0x100, RestrictThisEntity_SwitchEnd, RestrictThisEntity_SwitchEnd
+		// Klobber Karnage
+        case    0x80
+            RestrictThisEntity    0x8788
+            RestrictThisEntity    0x879e
+            RestrictThisEntity    0x87b4
+            RestrictThisEntity    0x87ca
+            break
+		// Animal antics Rattly
+		case	0x9c
+			// rtl in restrict all
+			RestrictAll
+			// Break for semantic value - does nothing
+			break
+		// "9A=Animal Antics - Rambi Section"
+        case    0x9a
+            RestrictThisEntity    0x8a26
+            RestrictThisEntity    0x8a5e
+            break
+		// 16 is fiery furnace
+        case    0x16
+            RestrictThisEntity    0x9da0
+            break
+		// 6e is toxic tower
+		case	0x6e
+			RestrictAll
+			break
+		// 17 is web woods
+        case    0x17
+            RestrictThisEntity    0x66fa
+            RestrictThisEntity    0x6a78
+            break
+		// e is target terror
+        case    0x0e
+            RestrictThisEntity    0x9da0
+            break
+		// 2d is bramble blast
+        case    0x2d
+            RestrictThisEntity    0x9da0
+            RestrictThisEntity    0x9ee2
+            RestrictThisEntity    0xe167
+            break
+		// a is slime climb
+        case    0x0a
+            RestrictThisEntity    0x9ed4
+            break
+		// 5 is rattle b
+        case    0x05
+            RestrictThisEntity    0x69e8
+            break
+		// 29 is krockhead
+        case    0x29
+            RestrictThisEntity    0x9da0
+            RestrictThisEntity    0x9f28
+            RestrictThisEntity    0x9f36
+            RestrictThisEntity    0x9e70
+            break
+		// 28 is b bayou
+        case    0x28
+            RestrictThisEntity    0xc656
+            break
+		// 02 is rambi rumble
+        case    0x02
+            RestrictThisEntity    0x7ca8
+            RestrictThisEntity    0x7cae
+            RestrictThisEntity    0x7cce
+            RestrictThisEntity    0x7e0a
+            break
+		// 2c is mudhole
+        case    0x2c
+            RestrictThisEntity    0x6a2e
+            RestrictThisEntity    0x9e42
+            break
+
+GlobalRemoveEntity:
+
+	// 97a6 is dk coin
+	cpy #0x97a6
+	bne $+GlobalRemoveEntity_skip_97a6
+		RtlCreateEntity
+GlobalRemoveEntity_skip_97a6:
+
+	rtl
+	
+DoWeChangeThis:
+

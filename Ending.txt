@@ -1,0 +1,159 @@
+Ending:
+
+	lda $=KkrMet
+	bne $+Ending_skip_cranky
+		jmp $0xBAC7E4
+Ending_skip_cranky:
+	
+	GoToCredits
+
+	jmp $=EndingCredits
+	
+EndText:
+	.string "H"
+	
+ClearBank7f:
+	ldx #0x8000
+	dex
+	dex
+	tdc
+ClearBank7f_loop1:
+	sta $0x7f0000,x
+	dex
+	dex
+	bpl $-ClearBank7f_loop1
+	
+	ldx #0x7fff
+ClearBank7f_loop2:
+	sta $0x7f8000,x
+	dex
+	dex
+	bpl $-ClearBank7f_loop2
+		rtl
+
+	
+
+CustomEndingFirst:
+
+	// Set window tint
+	lda #0x000f
+	sta $0x2100
+	
+	// Freeze screen here
+	SetupNMIPointer 0xd1a0
+
+DisplayStats:
+	
+	// Write slash to bg2
+	WriteToVRAM 0x0a00, 0xf7ed68, 0x0040
+
+
+	FuncStart
+
+	// Display heads
+	WriteHeadRight 0x0076, 11, 1
+	WriteHeadLeft 0x0078, 18, 1
+
+
+	// Write our static strings
+	WriteString 13, 1, String_Stats
+	WriteString 1, 5, String_Time
+	WriteString 1,10, String_Unique1
+	WriteString 1,15, String_EntrancesTaken
+	WriteString 1,20, String_Lives
+	WriteString 1,25, String_Deaths
+
+	// Convert vars to dynamic strings
+	ToString EntrancesFound_Length, TotalUniqueEntrancesString, 4
+	ToString TotalEntrances, TotalEntrancesString, 4
+	ToString TotalLives, TotalLivesObtained, 4
+	ToString DeathNumber, TotalDeathsString, 4
+
+	ToString TotalTimeHours, TotalTimeStringHours, 4
+	// Convert time
+	ToString2 TotalTimeSeconds, TotalTimeStringSeconds
+	ToString2 TotalTimeMinutes, TotalTimeStringMinutes
+
+	// Replace leading 0's with '.'
+	FormatString TotalUniqueEntrancesString
+	FormatString TotalEntrancesString
+	FormatString TotalLivesObtained
+	FormatString TotalDeathsString
+
+	FormatString TotalTimeStringHours
+	
+	// Write our new strings
+	WriteString 23, 10, TotalUniqueEntrancesString
+	WriteString 27, 15, TotalEntrancesString
+	WriteString 27, 20, TotalLivesObtained
+	WriteString 27, 25, TotalDeathsString
+	
+	WriteString 29, 5, TotalTimeStringSeconds
+	WriteString 26, 5, TotalTimeStringMinutes
+	WriteString 21, 5, TotalTimeStringHours
+	
+	WriteString 25, 4, String_Time_colon
+	WriteString 28, 4, String_Time_colon
+		
+	
+	CreditsDMA
+	FuncEnd
+	
+	.mx 0x20
+	sep #0x20
+	lda #0x0f
+	sta $0x0512
+	sta $0x2100
+	rep #0x20
+	.mx 0x00
+	
+	rtl
+	
+WriteWithDMA:
+	// Lower 16 bits to transfer
+	sta $0x4302
+	// # of bytes to transfer
+	sty $0x4305
+	// Sets 4300 for param, and 4301 as type 18 (vram write)
+	lda #0x1801
+	sta $0x4300
+	.mx 0x30
+	sep #0x30
+	// Bank
+	stx $0x4304
+	// Start DMA
+	lda #1
+	sta $0x420b
+	rep #0x30
+	.mx 0x00
+	
+	rtl
+
+CustomEndingSecond:
+sta $0x7ffffc
+
+	
+	// Go to credits second
+	SetupNMIPointer 0xd1a4
+
+String_Stats:
+	.string0      "stats"
+
+String_Time:
+	.string0      "total time............00.00.00"
+
+String_Time_colon:
+    .string0      "."
+
+String_Unique1:
+	.string0      "total unique entrances..../137"
+
+String_EntrancesTaken:
+	.string0      "Total entrances taken....."
+
+String_Lives:
+	.string0      "Total lives obtained......"
+
+String_Deaths:
+	.string0      "Total deaths.............."
+

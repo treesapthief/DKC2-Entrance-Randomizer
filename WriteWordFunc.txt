@@ -1,0 +1,442 @@
+// For use in credit sequence only!
+
+// Return in A register
+.func CalculateTile _x, _y
+CalculateTile:
+	
+    // Y * 0x40
+    lda    $.y
+    xba
+    lsr    a
+    lsr    a
+	tay
+
+	lda #0
+    // + X * 2
+    adc    $.x
+	clc
+    adc    $.x
+	tax
+	return
+
+
+.func WriteCharFunc _charIndex, _x, _y
+WriteCharFunc:
+	.local _xProduct, _yProduct
+	// Result in A
+	.precall CalculateTile _x, _y
+		lda $.x
+		sta $.Param_x
+		lda $.y
+		sta $.Param_y
+	call
+
+	// x has x, y has y
+	stx $.xProduct
+	sty $.yProduct
+		
+
+	lda #0
+	clc
+	adc $.xProduct
+	clc
+	adc $.yProduct
+	// Store index in y
+	tay
+	
+	// Select tile based on letter
+	lda $.charIndex
+	tax
+	// Only care about lower 8 
+	lda $=LetterCharLUT,x
+	and #0x00ff
+	
+	// Set palette and priority
+	ora #0x2800
+	
+	false 
+	{
+		BG Map (32x32 entries)
+			Each BG Map Entry consists of a 16bit value as such:
+			  Bit 0-9   - Character Number (000h-3FFh)
+			  Bit 10-12 - Palette Number   (0-7)
+			  Bit 13    - BG Priority      (0=Lower, 1=Higher)
+			  Bit 14    - X-Flip           (0=Normal, 1=Mirror horizontally)
+			  Bit 15    - Y-Flip           (0=Normal, 1=Mirror vertically)
+	}
+	// Store in map
+	tyx
+	sta $=CreditTileMap,x
+
+	
+	lda #0
+	clc
+	adc $.xProduct
+	clc
+	adc $.yProduct
+	// 0x40 higher
+	clc
+	adc #0x0040
+	// Store index in y
+	tay
+	
+	// Select tile based on letter
+	lda $.charIndex
+	tax
+	// Only care about lower 8 
+	lda $=LetterCharLUT,x
+	and #0x00ff
+	// Next
+	inc a
+	
+	// Set palette and priority
+	ora #0x2800
+
+	// Store in map
+	tyx
+	sta $=CreditTileMap,x
+	
+	return
+	
+.func WriteStringFunc =Address, _x, _y
+WriteStringFunc:
+	// i is index
+	.local _i
+	stz $.i
+	
+	b_Loop:
+		// Index our string
+		ldy $.i
+		lda [$.Address],y
+		and #0x00ff
+		// Are we == to 0?
+		beq $+b_endLoop
+			// Are we on space?
+			cmp #0x0020
+			bne $+b_skip_space
+				inc $.i
+				inc $.x
+				bra $-b_Loop
+		b_skip_space:
+			
+			ldx $.x
+			ldy $.y
+			
+			WriteChar
+			inc $.i
+			inc $.x
+			bra $-b_Loop
+	b_endLoop:
+	
+	return
+
+//NumberStringLUT
+.func ToStringFunc _Number, =StringDestination, _digits
+ToStringFunc:
+sta $0x7ffffe
+	lda $.Number
+	// Is number 10000 or higher?
+	cmp #10000
+	bcc $+b_1
+		lda #9999
+		sta $.Number
+b_1:
+
+	.local _i
+	// Number of digits
+	ldy $.digits
+	lda #0
+	sta [$.StringDestination],y
+	dey
+	sty $.i
+	ldy $.i
+	
+	b_Loop:
+		// Set up divide
+		SetUpDivide Number, 10
+		xba
+		xba
+		xba
+		xba
+		nop
+		nop
+		
+		// Read quotient+remainder
+		// Remainder
+		lda $0x4216
+		tax
+		// What number is the remainder?
+		lda $=NumberStringLUT,x
+		and #0x00ff
+		ldy $.i
+
+		sep #0x20
+		sta [$.StringDestination],y
+		rep #0x20
+
+		dec $.i
+		// Store the quotient
+		lda $0x4214
+		beq $+b_Loop_break
+			sta $.Number
+			bra $-b_Loop
+		
+	b_Loop_break:
+	
+	return
+
+.func FormatStringFunc =StringAddress
+FormatStringFunc:
+	// Index
+	ldy #0
+	
+	b_Loop:
+		.mx 0x20
+		sep #0x20
+
+		// Is this char 0?
+		lda [$.StringAddress],y
+		beq $+b_skip_num
+			rep #0x20
+			.mx 0x00
+			return
+	b_skip_num:
+		
+		.mx 0x20
+		sep #0x20
+		// 0x2e is char code for .
+		lda #0x2e
+		sta [$.StringAddress],y
+		iny
+		rep #0x20
+		.mx 0x00
+		bra $-b_Loop
+		
+.func ToString2Func _Number, =StringDestination
+ToString2Func:
+		
+	// Set up divide
+	SetUpDivide Number, 10
+	xba
+	xba
+	xba
+	xba
+	nop
+	nop
+	
+	// Read quotient+remainder
+	// Remainder
+	lda $0x4216
+	tax
+	// What number is the remainder?
+	lda $=NumberStringLUT,x
+	and #0x00ff
+	ldy #1
+
+	sep #0x20
+	sta [$.StringDestination],y
+	rep #0x20
+
+	// Store the quotient
+	lda $0x4214
+	tax
+	// What number is the remainder?
+	lda $=NumberStringLUT,x
+	and #0x00ff
+	ldy #0
+
+	sep #0x20
+	sta [$.StringDestination],y
+	rep #0x20
+	
+	return
+
+.func WriteHeadRightFunc _Head, _x, _y,
+WriteHeadRightFunc:
+	.local _xProduct, _yProduct, _iMap, _iTile, _i
+	stz $.iMap
+	stz $.iTile
+	stz $.i
+
+	// So we are 1 based
+	inc $.i
+	
+	// Result in A
+	.precall CalculateTile _x, _y
+		lda $.x
+		sta $.Param_x
+		lda $.y
+		sta $.Param_y
+	call
+	
+	// x has x, y has y
+	stx $.xProduct
+	sty $.yProduct
+
+	b_Loop:
+		lda #0
+		clc
+		adc $.xProduct
+		clc
+		adc $.yProduct
+		clc
+		adc $.iMap
+		// Store index in y
+		tay
+		
+		// Load head
+		lda $.Head
+		clc
+		adc $.iTile
+		// Set palette and priority
+		ora #0x2800
+		
+		false 
+		{
+			BG Map (32x32 entries)
+				Each BG Map Entry consists of a 16bit value as such:
+				  Bit 0-9   - Character Number (000h-3FFh)
+				  Bit 10-12 - Palette Number   (0-7)
+				  Bit 13    - BG Priority      (0=Lower, 1=Higher)
+				  Bit 14    - X-Flip           (0=Normal, 1=Mirror horizontally)
+				  Bit 15    - Y-Flip           (0=Normal, 1=Mirror vertically)
+		}
+		// Store in map
+		tyx
+		sta $=CreditTileMap,x
+		lda $.i
+		
+		// Which phase are we on?
+		cmp #1
+		bne $+b_1
+			inc $.iMap
+			inc $.iMap
+			inc $.iTile
+	b_1:
+	
+		cmp #2
+		bne $+b_2
+			lda $.iMap
+			clc
+			adc #0x003e
+			sta $.iMap
+			lda $.iTile
+			clc
+			adc #0x000f
+			sta $.iTile
+			
+			lda $.i
+	b_2:
+
+		cmp #3
+		bne $+b_3
+			inc $.iMap
+			inc $.iMap
+			inc $.iTile
+	b_3:
+	
+		inc $.i
+		// Do we end loop?
+		lda $.i
+
+		cmp #5
+		bcc $-b_Loop
+
+	return
+
+.func WriteHeadLeftFunc _Head, _x, _y,
+WriteHeadLeftFunc:
+sta $0x7ffffa
+	.local _xProduct, _yProduct, _iMap, _iTile, _i
+	stz $.iMap
+	stz $.iTile
+	stz $.i
+
+	// Place offset
+	inc $.iTile
+	// So we are 1 based
+	inc $.i
+	
+	// Result in A
+	.precall CalculateTile _x, _y
+		lda $.x
+		sta $.Param_x
+		lda $.y
+		sta $.Param_y
+	call
+	
+	// x has x, y has y
+	stx $.xProduct
+	sty $.yProduct
+
+	b_Loop:
+		lda #0
+		clc
+		adc $.xProduct
+		clc
+		adc $.yProduct
+		clc
+		adc $.iMap
+		// Store index in y
+		tay
+		
+		// Load head
+		lda $.Head
+		clc
+		adc $.iTile
+		// Set palette and priority
+		ora #0x6800
+		
+		false 
+		{
+			BG Map (32x32 entries)
+				Each BG Map Entry consists of a 16bit value as such:
+				  Bit 0-9   - Character Number (000h-3FFh)
+				  Bit 10-12 - Palette Number   (0-7)
+				  Bit 13    - BG Priority      (0=Lower, 1=Higher)
+				  Bit 14    - X-Flip           (0=Normal, 1=Mirror horizontally)
+				  Bit 15    - Y-Flip           (0=Normal, 1=Mirror vertically)
+		}
+		// Store in map
+		tyx
+		sta $=CreditTileMap,x
+		lda $.i
+		
+		// Which phase are we on?
+		cmp #1
+		bne $+b_1
+			inc $.iMap
+			inc $.iMap
+			dec $.iTile
+	b_1:
+	
+		cmp #2
+		bne $+b_2
+			lda $.iMap
+			clc
+			adc #0x003e
+			sta $.iMap
+			lda $.iTile
+			clc
+			adc #0x0011
+			sta $.iTile
+			
+			lda $.i
+	b_2:
+
+		cmp #3
+		bne $+b_3
+			inc $.iMap
+			inc $.iMap
+			dec $.iTile
+	b_3:
+	
+		inc $.i
+		// Do we end loop?
+		lda $.i
+
+		cmp #5
+		bcc $-b_Loop
+
+	return
+	

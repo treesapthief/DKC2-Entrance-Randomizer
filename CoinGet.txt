@@ -1,0 +1,77 @@
+CoinGet:
+sta $0x7ffff8
+	// Replaced
+	sta $0x0000,y
+	phx
+	phy
+	// Load index
+	lda $0x56,x
+	dec a
+
+	FuncStartKeepA
+
+	.precall CoinGet_func
+	call
+	
+	FuncEnd
+	
+	// Save to SRAM
+	lda $=CurrentCoinsWRAM
+	sta $=CurrentCoinsSRAM
+	
+	ply
+	plx
+	// Replaced
+	sep #0x20
+	rtl
+
+.func CoinGet_func
+CoinGet_func:
+	.local _goal
+	sta $.goal
+
+	// Store for return
+	.local _x, _y
+	stx $.x
+	sty $.y
+	
+	// Initialize other variables
+	.local _bit, _index
+	lda #1
+	sta $.bit
+	stz $.index
+	
+CoinGet_func_loop:
+	// Load custom index
+	ldx $.index
+	// Only 16 indices
+	cpx #0x0010
+	bcs $+CoinGet_func_loop_end
+		
+		lda $=CoinIndexes,x
+		cmp $.goal
+		bne $+CoinGet_func_loop_skip_equal
+		
+			// 16 bit set of flags
+			lda $=LevelCode
+			asl a
+			tax
+			lda $=CollectedFlag,x
+			ora $.bit
+			sta $=CollectedFlag,x
+			bra $+CoinGet_func_loop_end
+		
+	CoinGet_func_loop_skip_equal:
+
+		// Increment 
+		inc $.index
+		inc $.index
+		asl $.bit
+		bra $-CoinGet_func_loop
+
+CoinGet_func_loop_end:
+CoinGet_func_return:
+	// Fix our registers
+	ldx $.x
+	ldy $.y
+	return
