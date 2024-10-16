@@ -1,8 +1,7 @@
-﻿using System;
+﻿using DKC2_Entrance_Randomizer.Constants;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DKC2_Entrance_Randomizer
 {
@@ -33,7 +32,7 @@ namespace DKC2_Entrance_Randomizer
             this.songCode = songCode;
             this.thisEntrance = thisEntrance;
             // If we are not in a boss
-            if (!(new byte[] { 0x9, 0xd, 0x21, 0x60, 0x61, 0x63 }.Contains(levelCode)))
+            if (!BossLevelCodes.IsBossLevel(levelCode))
             {
                 songList.Add(songCode);
                 this.exits = exits;
@@ -88,7 +87,7 @@ namespace DKC2_Entrance_Randomizer
                 // Pull (from bottom) next spoiler log into current
                 var currentCode = queue.Dequeue();
 
-                if ((new byte[] { 0x9, 0xd, 0x21, 0x60, 0x61, 0x63 }.Contains((byte)(currentCode >> 8))))
+                if (BossLevelCodes.IsBossLevel((byte)(currentCode >> 8)))
                 {
                     // Mark stage as 'been here'
                     checklist[currentCode] = true;
@@ -145,7 +144,7 @@ namespace DKC2_Entrance_Randomizer
                     return String.Join(", ", pathString);
                 }
 
-                if ((new byte[] { 0x9, 0xd, 0x21, 0x60, 0x61, 0x63 }.Contains((byte)(currentStage >> 8))))
+                if (BossLevelCodes.IsBossLevel((byte)(currentStage >> 8)))
                 {
                     // Mark stage as 'been here'
                     checklist[currentStage] = true;
@@ -195,7 +194,7 @@ namespace DKC2_Entrance_Randomizer
         public void RandomizeSong(ROM rom)
         {
             // If we are not in a boss
-            if (!(new byte[] { 0x9, 0xd, 0x21, 0x60, 0x61, 0x63 }.Contains(levelCode)))
+            if (!BossLevelCodes.IsBossLevel(levelCode))
             {
                 // Select index first
                 int randomIndex = Defaults.rng.Next(0, songList.Count);
