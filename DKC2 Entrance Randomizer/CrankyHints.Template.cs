@@ -273,22 +273,6 @@ namespace DKC2_Entrance_Randomizer
 
             return "";
         }
-        public List<string> NegativeHints = new List<string>();
-        public void FillNegativeCost2()
-        {
-            NegativeHints = new List<string>()
-            {
-                $"If you see {GetUnusedAndRemove()}, you should turn back.",
-                $"{GetUnusedAndRemove()} is bad new bears.",
-                $"Seeing {GetUnusedAndRemove()} is a bad omen.",
-                $"I don't think {GetUnusedAndRemove()} is a good idea.",
-                $"If you're {GetUnusedAndRemove()}, you're dead.",
-                $"Exploring {GetUnusedAndRemove()} is a poor life decision.",
-
-
-            };
-            
-        }
 
         private string GetUnusedAndRemove()
         {

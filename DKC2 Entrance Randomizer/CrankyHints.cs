@@ -83,7 +83,6 @@ namespace DKC2_Entrance_Randomizer
             // Setup the 2-cost hints
             GetUnusedLevels();
             Fill2Cost();
-            FillNegativeCost2();
 
             while (hints.Count < 5)
             {
@@ -93,12 +92,9 @@ namespace DKC2_Entrance_Randomizer
                 String proposed = "";
 
                 // Assigned proposed based on random number
-                if (rand > 300)
-                    proposed = SelectCost2Hint();
-                else
-                {
-                    proposed = NegativeHints[Defaults.rng.Next(0, NegativeHints.Count)];
-                }
+                
+                proposed = SelectCost2Hint();
+                
                 if (proposed == "")
                     continue;
                 // Does our list not have proposed yet?

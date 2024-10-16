@@ -121,12 +121,6 @@ namespace DKC2_Entrance_Randomizer
             spoilerLog.Add("");
 
             spoilerLog.Add("*******************************************");
-            spoilerLog.Add("*************BAD LIFE DECISIONS************");
-            spoilerLog.Add("*******************************************");
-            spoilerLog.AddRange(hints.unusedLevels);
-            spoilerLog.Add("");
-
-            spoilerLog.Add("*******************************************");
             spoilerLog.Add("****************CRANKY HINTS***************");
             spoilerLog.Add("*******************************************");
             spoilerLog.AddRange(hints.hints);

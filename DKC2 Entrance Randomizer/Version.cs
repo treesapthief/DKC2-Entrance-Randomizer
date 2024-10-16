@@ -9,7 +9,7 @@ namespace DKC2_Entrance_Randomizer
     static class Version
     {
         //private static string versionString = "Version 0.106";
-        private static string versionString = "Version 1.000";
+        private static string versionString = "Version 1.001";
         public static string downloadLink;
         public static bool currentVersion;
 
